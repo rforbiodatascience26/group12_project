@@ -1,0 +1,44 @@
+# 04 Describe
+
+## Purpose
+
+Sample overview, expression distributions, summary tables and exploratory plots.
+
+## Input / Output
+
+|            | File                  |
+|------------|-----------------------|
+| **Reads**  | `data/03_dat_aug.tsv` |
+| **Writes** | `04_key_plot_1.png`   |
+
+## Setup
+
+```{r}
+#| label: 04_setup
+#| message: false
+library(tidyverse)
+library(here)
+source(here("R", "99_proj_func.R"))
+```
+
+## Load data
+
+```{r}
+#| label: 04_load-data
+# TODO: replace with the real loading code
+# dat_aug <- read_tsv(here("data", "03_dat_aug.tsv"))
+```
+
+## Initial checks
+
+```{r}
+#| label: 04_checks
+# TODO: dimensions, column types, missing values, sample IDs
+```
+
+## Save output
+
+```{r}
+#| label: 04_save
+# TODO: create the plot
+```

@@ -1,0 +1,44 @@
+# 01 Load
+
+## Purpose
+
+Load the raw GSE7904 expression data and sample metadata. Record the source, platform and initial checks.
+
+## Input / Output
+
+|            | File                        |
+|------------|-----------------------------|
+| **Reads**  | `data/_raw/<raw file name>` |
+| **Writes** | `data/01_dat_load.tsv`      |
+
+## Setup
+
+```{r}
+#| label: 01_setup
+#| message: false
+library(tidyverse)
+library(here)
+source(here("R", "99_proj_func.R"))
+```
+
+## Load data
+
+```{r}
+#| label: 01_load-data
+# TODO: replace with the real loading code
+# raw_data <- read_excel(here("data", "_raw", "raw_data.xlsx"))
+```
+
+## Initial checks
+
+```{r}
+#| label: 01_checks
+# TODO: dimensions, column types, missing values, sample IDs
+```
+
+## Save output
+
+```{r}
+#| label: 01_save
+# TODO: write_tsv(dat_load, here("data", "01_dat_load.tsv"))
+```

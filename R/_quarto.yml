@@ -1,0 +1,12 @@
+# tells quarto to render the files to the results folder
+project:
+  output-dir: ../results
+
+# formats all quarto documents
+format:
+   html:
+     toc: true
+     embed-resources: true
+
+# set the date for all quarto documents to today
+date: today

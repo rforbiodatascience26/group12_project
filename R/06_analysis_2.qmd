@@ -1,8 +1,44 @@
----
-title: "Analysis 2"
-author: "s260367"
-format: html
-editor: visual
----
+# 06 Analysis 2
 
-## PCA
+## Purpose
+
+Secondary exploratory analysis such as PCA and sample clustering.
+
+## Input / Output
+
+|            | File                  |
+|------------|-----------------------|
+| **Reads**  | `data/03_dat_aug.tsv` |
+| **Writes** | `06_key_plot_3.png`   |
+
+## Setup
+
+```{r}
+#| label: 06_setup 
+#| message: false  
+library(tidyverse)  
+library(here)  
+source(here("R", "99_proj_func.R"))
+```
+
+## Load data
+
+```{r}
+#| label: 06_load-data  
+# TODO: replace with the real loading code  
+# dat_aug <- read_tsv(here("data", "03_dat_aug.tsv"))
+```
+
+## Initial checks
+
+```{r}
+#| label: 06_checks  
+# TODO: dimensions, column types, missing values, sample IDs
+```
+
+## Save output
+
+```{r}
+#| label: 06_save  
+# TODO: create the plot
+```

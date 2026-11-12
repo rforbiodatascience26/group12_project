@@ -1,11 +1,46 @@
 ---
-title: "Master Document"
-author: "group 12"
-format: html
+title: "00 All: Full project workflow"
+author: 
+  - Ricsi
+  - Daniel
+  - Kostas
+  - Sasa
+  - Marie
 editor: visual
 ---
 
 # 
+
+## Purpose
+
+Renders every analysis document in the required order. Each document runs independently and writes its own HTML to \`results/\`.
+
+```{r}
+#| label: 00_setup
+#| message: false
+library(here)
+library(quarto)
+```
+
+```{r}
+#| label: render-all
+#| message: false
+#| echo: false
+#| eval: false # change to true later
+steps <- c(
+  "01_load.qmd",
+  "02_clean.qmd",
+  "03_augment.qmd",
+  "04_describe.qmd",
+  "05_analysis_1.qmd",
+  "06_analysis_2.qmd"
+)
+
+for (step in steps) {
+  message("Rendering ", step)
+  quarto_render(here("R", step))
+}
+```
 
 {{< include 01_load.qmd >}}
 
