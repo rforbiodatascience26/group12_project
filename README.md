@@ -4,7 +4,7 @@
 |---|---|---|
 | Ricsi (Member 1) | <sXXXXXX> | <username> |
 | Daniel (Member 2) | <sXXXXXX> | <username> |
-| Konstantinos (Member 3) | <s263498> | DizzyForest |
+| Konstantinos (Member 3) | s263498 | DizzyForest |
 | Sasa (Member 4) | <sXXXXXX> | <username> |
 | Marie (Member 5) | s260367 | mariekvl |
 
