@@ -4,7 +4,7 @@
 |---|---|---|
 | Ricsi (Member 1) | <sXXXXXX> | <username> |
 | Daniel (Member 2) | <sXXXXXX> | <username> |
-| Kostas (Member 3) | <sXXXXXX> | <username> |
+| Konstantinos (Member 3) | <s263498> | DizzyForest |
 | Sasa (Member 4) | <sXXXXXX> | <username> |
 | Marie (Member 5) | s260367 | mariekvl |
 
@@ -79,7 +79,7 @@ doc/                  presentation.qmd and presentation.html
 |---|---|
 | `01_load.qmd` | Ricsi |
 | `02_clean.qmd` | Daniel |
-| `03_augment.qmd`, `04_describe.qmd` | Kostas |
+| `03_augment.qmd`, `04_describe.qmd` | Konstantinos |
 | `05_analysis_1.qmd` | Sasa |
 | `06_analysis_2.qmd`, `00_all.qmd`, `99_proj_func` | Marie |
 
