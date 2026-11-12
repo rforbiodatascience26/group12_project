@@ -2,5 +2,5 @@
 .Rhistory
 .RData
 .Ruserdata
-/_raw
-/data
+data/_raw
+data/

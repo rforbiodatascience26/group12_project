@@ -1,0 +1,8 @@
+---
+title: "Analysis 2"
+author: "s260367"
+format: html
+editor: visual
+---
+
+## PCA
