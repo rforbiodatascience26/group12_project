@@ -27,6 +27,7 @@ library(quarto)
 #| message: false
 #| echo: false
 #| eval: false # change to true later
+# create rendered files for each of part
 steps <- c(
   "01_load.qmd",
   "02_clean.qmd",
