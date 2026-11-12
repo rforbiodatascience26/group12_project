@@ -1,0 +1,15 @@
+{
+  "hash": "a863d5220de0bee737d4fca498a255c7",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"03 Augment\"\nauthor: \"Member 3 (Kostas)\"\ndate: today\nformat: html\n---\n\n\n\n## Purpose\n\nCreate derived variables and analysis-ready structure.\n\n## Input / Output\n\n|            | File                    |\n|------------|-------------------------|\n| **Reads**  | `data/02_dat_clean.tsv` |\n| **Writes** | `data/03_dat_aug.tsv`   |\n\n## Setup\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nlibrary(tidyverse)\nlibrary(here)\nsource(here(\"R\", \"99_proj_func.R\"))\n```\n:::\n\n\n\n## Load data\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# TODO: replace with the real loading code\n# dat_clean <- read_tsv(here(\"data\", \"02_dat_clean.tsv\"))\n```\n:::\n\n\n\n## Initial checks\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# TODO: dimensions, column types, missing values, sample IDs\n```\n:::\n\n\n\n## Save output\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# TODO: write_tsv(dat_load, here(\"data\", \"03_dat_aug.tsv\"))\n```\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

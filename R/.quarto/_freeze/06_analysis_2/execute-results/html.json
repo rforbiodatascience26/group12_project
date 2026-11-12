@@ -1,0 +1,15 @@
+{
+  "hash": "a2bc6b8b7f334d5e736cdde54576c088",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"06 Analysis 2\"  \nauthor: \"s260367\"  \ndate: today  \nformat: html\n---\n\n\n\n## Purpose\n\nSecondary exploratory analysis such as PCA and sample clustering.\n\n## Input / Output\n\n|            | File                  |\n|------------|-----------------------|\n| **Reads**  | `data/03_dat_aug.tsv` |\n| **Writes** | `06_key_plot_3.png`   |\n\n## Setup\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nlibrary(tidyverse)  \nlibrary(here)  \nsource(here(\"R\", \"99_proj_func.R\"))\n```\n:::\n\n\n\n## Load data\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# TODO: replace with the real loading code  \n# dat_aug <- read_tsv(here(\"data\", \"03_dat_aug.tsv\"))\n```\n:::\n\n\n\n## Initial checks\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# TODO: dimensions, column types, missing values, sample IDs\n```\n:::\n\n\n\n## Save output\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# TODO: create the plot\n```\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

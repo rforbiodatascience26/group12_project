@@ -1,0 +1,15 @@
+{
+  "hash": "b31387b873fe762d7868a2ecc8227059",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"01 Load\"\nauthor: \"Member 1 (Ricsi)\"\ndate: today\nformat: html\n---\n\n\n\n## Purpose\n\nLoad the raw GSE7904 expression data and sample metadata. Record the source, platform and initial checks.\n\n## Input / Output\n\n|            | File                        |\n|------------|-----------------------------|\n| **Reads**  | `data/_raw/<raw file name>` |\n| **Writes** | `data/01_dat_load.tsv`      |\n\n## Setup\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nlibrary(tidyverse)\nlibrary(here)\nsource(here(\"R\", \"99_proj_func.R\"))\n```\n:::\n\n\n\n## Load data\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# TODO: replace with the real loading code\n# raw_data <- read_excel(here(\"data\", \"_raw\", \"raw_data.xlsx\"))\n```\n:::\n\n\n\n## Initial checks\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# TODO: dimensions, column types, missing values, sample IDs\n```\n:::\n\n\n\n## Save output\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# TODO: write_tsv(dat_load, here(\"data\", \"01_dat_load.tsv\"))\n```\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

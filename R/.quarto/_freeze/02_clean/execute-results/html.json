@@ -1,0 +1,15 @@
+{
+  "hash": "786dd0ee32c5ffedc17d5f0920d2f89f",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"02 Clean\" \nauthor: \"Member 2 (Daniel)\" \ndate: today \nformat: html \n---\n\n\n\n## Purpose\n\nClean sample metadata, identify comparison groups, handle missing/duplicate IDs and probe annotations.\n\n## Input / Output\n\n|            | File                    |\n|------------|-------------------------|\n| **Reads**  | `data/01_dat_load.tsv`  |\n| **Writes** | `data/02_dat_clean.tsv` |\n\n## Setup\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nlibrary(tidyverse) \nlibrary(here) \nsource(here(\"R\", \"99_proj_func.R\"))\n```\n:::\n\n\n\n## Load data\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# TODO: replace with the real loading code\n# dat_load <- read_tsv(here(\"data\", \"01_dat_load.tsv\"))\n```\n:::\n\n\n\n## Initial checks\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# TODO: dimensions, column types, missing values, sample IDs\n```\n:::\n\n\n\n## Save output\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# TODO: write_tsv(dat_clean, here(\"data\", \"02_dat_clean.tsv\"))\n```\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

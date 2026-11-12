@@ -1,0 +1,23 @@
+{
+  "01_load.qmd": {
+    "01_load.html": "c5c0ac6e"
+  },
+  "02_clean.qmd": {
+    "02_clean.html": "fc029937"
+  },
+  "03_augment.qmd": {
+    "03_augment.html": "c970f901"
+  },
+  "04_describe.qmd": {
+    "04_describe.html": "a918479f"
+  },
+  "05_analysis_1.qmd": {
+    "05_analysis_1.html": "724c5bed"
+  },
+  "06_analysis_2.qmd": {
+    "06_analysis_2.html": "6af54e42"
+  },
+  "00_all.qmd": {
+    "00_all.html": "7901606a"
+  }
+}

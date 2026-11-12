@@ -1,0 +1,15 @@
+{
+  "hash": "08fd9faa0f60ee184b60284d54200c0a",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"05 Analysis 1\" \nauthor: \"Member 4 (Sasa)\" \ndate: today \nformat: html\n---\n\n\n\n## Purpose\n\nPrimary tumour-versus-normal differential-expression analysis.\n\n## Input / Output\n\n|            | File                  |\n|------------|-----------------------|\n| **Reads**  | `data/03_dat_aug.tsv` |\n| **Writes** | `05_key_plot_2.png`   |\n\n## Setup\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nlibrary(tidyverse) \nlibrary(here) \nsource(here(\"R\", \"99_proj_func.R\"))\n```\n:::\n\n\n\n## Load data\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# TODO: replace with the real loading code \n# dat_aug <- read_tsv(here(\"data\", \"03_dat_aug.tsv\"))\n```\n:::\n\n\n\n## Initial checks\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# TODO: dimensions, column types, missing values, sample IDs\n```\n:::\n\n\n\n## Save output\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# TODO: create the plot\n```\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}
