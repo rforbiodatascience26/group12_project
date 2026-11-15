@@ -35,6 +35,27 @@ source(here("R", "99_proj_func.R"))
 #| label: 04_checks
 # TODO: dimensions, column types, missing values, sample IDs
 ```
+##Analysis
+
+###Distribution
+
+```{r}
+p1 <- ggplot(df_counts, aes(x=expression)) + # df_counts: raw counts matrix, expression: expression values
+      geom_histogram(
+      bins = 50,
+      fill = "skyblue",
+      color = "black",
+      linewidth = 0.3) +
+      labs(
+      title = "Raw counts",
+      subtitle = sample_id,
+      x = "Raw count",
+      y = "Number of genes"
+      ) +
+      theme_classic(base_size = 13)
+p1
+```
+
 
 ## Save output
 
