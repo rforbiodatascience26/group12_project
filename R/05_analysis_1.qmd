@@ -48,6 +48,14 @@ gravier_clean_aug_long <- pivot_longer(data = gravier_clean_aug, cols= -basal, n
 
 ### Group by gene
 
+Creating a dplyr pipeline, use the group_by() function to group your gravier_clean_aug_long dataset by gene and then add the nest() to your pipeline.
+
+```{r}
+gravier_clean_aug_long_nested <- gravier_clean_aug_long |> 
+  group_by(genes) |>
+  nest()
+```
+
 ## Save output
 
 ```{r}
