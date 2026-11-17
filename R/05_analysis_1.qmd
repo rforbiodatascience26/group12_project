@@ -42,6 +42,10 @@ source(here("R", "99_proj_func.R"))
 
 We need to create the long augment data so that have all the genes defined in one column. This way we are able to group the data by gene.
 
+```{r}
+gravier_clean_aug_long <- pivot_longer(data = gravier_clean_aug, cols= -basal, names_to = "genes", values_to = "expression") #we analyse the data for the basal subtype
+```
+
 ### Group by gene
 
 ## Save output
