@@ -10,3 +10,7 @@ format:
 
 # set the date for all quarto documents to today
 date: today
+
+
+# defualt to visual editor
+editor: visual

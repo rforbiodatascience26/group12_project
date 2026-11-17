@@ -6,11 +6,15 @@ Load the raw GSE7904 expression data and sample metadata. Record the source, pla
 
 ## Input / Output
 
-| Type       | File                                     |
-|:-----------|:-----------------------------------------|
-| **Reads**  | `data/_raw/GSE7904_series_matrix.txt.gz` |
-| **Writes** | `data/01_dat_load.tsv`                   |
-| **Writes** | `data/01_sample_metadata.tsv`            |
++--------------+------------------------------------------+
+| Type         | File                                     |
++:=============+:=========================================+
+| **Reads**    | `data/_raw/GSE7904_series_matrix.txt.gz` |
++--------------+------------------------------------------+
+| **Writes**   | `data/01_dat_load.tsv`                   |
+|              |                                          |
+|              | `data/01_sample_metadata.tsv`            |
++--------------+------------------------------------------+
 
 ## Data provenance
 
