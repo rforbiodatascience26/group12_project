@@ -55,7 +55,7 @@ We need to create the long augment data so that have all the genes defined in on
 
 ```{r}
 gravier_clean_aug_long <- pivot_longer(data = gravier_clean_aug,
-                                       cols= -sample_id, 
+                                       cols= -ID_REF, 
                                        names_to = "genes", 
                                        values_to = "expression")
 ```
