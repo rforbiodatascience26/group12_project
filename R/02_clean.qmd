@@ -17,7 +17,9 @@ Clean sample metadata, identify comparison groups, handle missing/duplicate IDs 
 #| label: 02_setup
 #| message: false 
 library(tidyverse) 
-library(here) 
+library(here)
+library(GEOquery)
+library(dplyr)
 source(here("R", "99_proj_func.R"))
 ```
 
@@ -25,20 +27,70 @@ source(here("R", "99_proj_func.R"))
 
 ```{r}
 #| label: 02_load-data 
-# TODO: replace with the real loading code
-# dat_load <- read_tsv(here("data", "01_dat_load.tsv"))
+dat_load <- read_tsv(here("data", "01_dat_load.tsv"))
+sample_metadata <- read_tsv(here("data", "01_sample_metadata.tsv"))
 ```
 
 ## Initial checks
 
 ```{r}
-#| label: 02_checks 
-# TODO: dimensions, column types, missing values, sample IDs
+#| label: 02_checks
+
+library(dplyr)
+library(GEOquery)
+
+# Keep Tumour and Normal breast samples
+sample_metadata_clean <- sample_metadata |>
+  filter(tissue_group %in% c("Tumour", "Normal breast"))
+
+# Keep the first two columns and the selected samples
+# Put the sample columns in the same order as the metadata
+# Rename the probe id column
+dat_clean <- dat_load |>
+  select(1, 2, all_of(as.character(sample_metadata_clean$sample_id))) |>
+  rename(probe_id = ID_REF)
+
+# Check the dimensions of both data frames
+dat_clean |> dim()
+sample_metadata_clean |> dim()
+
+# Count missing values
+dat_clean |> is.na() |> sum()
+sample_metadata_clean |> is.na() |> sum()
+
+# Check for duplicated probe IDs and sample IDs
+dat_clean |> pull(probe_id) |> anyDuplicated()
+sample_metadata_clean |> pull(sample_id) |> anyDuplicated()
+dat_clean |> colnames() |> anyDuplicated()
+
+# Download the GPL570 annotation table
+gpl570_table <- getGEO("GPL570") |>
+  Table()
+
+# Check that the required columns exist
+stopifnot("probe_id" %in% names(dat_clean))
+stopifnot(all(c("ID", "ENTREZ_GENE_ID") %in% names(gpl570_table)))
+
+# Match each probe to its gene ID and place gene_id second
+dat_clean <- dat_clean |>
+  mutate(
+    gene_id = gpl570_table[["ENTREZ_GENE_ID"]][
+      match(as.character(probe_id), gpl570_table[["ID"]])
+    ]
+  ) |>
+  relocate(gene_id, .after = probe_id)
+
+# Check that the sample IDs match in the same order
+dat_clean |>
+  select(-probe_id, -gene_id) |>
+  colnames() |>
+  identical(as.character(sample_metadata_clean$sample_id))
 ```
 
 ## Save output
 
 ```{r}
 #| label: 02_save 
-# TODO: write_tsv(dat_clean, here("data", "02_dat_clean.tsv"))
+write_tsv(dat_clean, here("data", "02_dat_clean.tsv"))
+write_tsv(sample_metadata_clean, here("data", "02_sample_metadata_clean.tsv"))
 ```
