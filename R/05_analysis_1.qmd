@@ -36,6 +36,14 @@ source(here("R", "99_proj_func.R"))
 # TODO: dimensions, column types, missing values, sample IDs
 ```
 
+## Analysis
+
+### Creating a long augment data
+
+We need to create the long augment data so that have all the genes defined in one column. This way we are able to group the data by gene.
+
+### Group by gene
+
 ## Save output
 
 ```{r}
@@ -43,4 +51,4 @@ source(here("R", "99_proj_func.R"))
 # TODO: create the plot
 ```
 
-## Analysis
+## 
