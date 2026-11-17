@@ -51,11 +51,11 @@ library(broom)
 
 ### Creating a long augment data
 
-We need to create the long augment data so that have all the genes defined in one column. This way we are able to group the data by gene.
+We need to create the long augment data so that have all the genes defined in one column. This way we are able to group the data by gene. The clean augment data should contain genes instead of probes.
 
 ```{r}
 gravier_clean_aug_long <- pivot_longer(data = gravier_clean_aug,
-                                       cols= -ID_REF, 
+                                       cols= -state, #state will be either tumor or normal
                                        names_to = "genes", 
                                        values_to = "expression")
 ```
@@ -68,6 +68,18 @@ Creating a dplyr pipeline, use the group_by() function to group your gravier_cle
 gravier_clean_aug_long_nested <- gravier_clean_aug_long |> 
   group_by(genes) |>
   nest()
+```
+
+### Adding a new variable model object
+
+Using the map()-function, add a new line to your pipeline, where you add a new variable model_object to your gravier_clean_aug_long_nested dataset, which R will compute *per* gene.
+
+```{r}
+gravier_clean_aug_long_nested <- gravier_clean_aug_long_nested |>
+  mutate(model_object = map(.x = data,
+                   .f = ~lm(formula = expression ~ state,
+                            data = .x)))
+
 ```
 
 ## Save output
