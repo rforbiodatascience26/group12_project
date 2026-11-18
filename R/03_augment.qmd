@@ -34,11 +34,21 @@ sample_metadata_clean <- read_tsv(here("data", "02_sample_metadata_clean.tsv"))
 ```{r}
 #| label: 03_checks
 # TODO: dimensions, column types, missing values, sample IDs
-dat_clean <- read_tsv(here("data", "02_dat_clean.tsv"))
-sample_metadata_clean <- read_tsv(here("data", "02_sample_metadata_clean.tsv"))
+
 sample_ids <- colnames(dat_clean)[-c(1, 2)]
 
 identical(sample_ids, sample_metadata_clean$sample_id)
+
+expression_values <- dat_clean |>
+  select(-probe_id, -gene_id) |>
+  as.matrix()
+
+sum(expression_values < 0, na.rm = TRUE)
+sum(expression_values == 0, na.rm = TRUE)
+sum(is.na(expression_values))
+summary(as.vector(expression_values))
+colSums(expression_values < 0)
+round(colMeans(expression_values < 0) * 100, 2)
 ```
 
 ## Save output
