@@ -25,8 +25,8 @@ source(here("R", "99_proj_func.R"))
 
 ```{r}
 #| label: 03_load-data
-# TODO: replace with the real loading code
-# dat_clean <- read_tsv(here("data", "02_dat_clean.tsv"))
+dat_clean <- read_tsv(here("data", "02_dat_clean.tsv"))
+sample_metadata_clean <- read_tsv(here("data", "02_sample_metadata_clean.tsv"))
 ```
 
 ## Initial checks
@@ -34,6 +34,11 @@ source(here("R", "99_proj_func.R"))
 ```{r}
 #| label: 03_checks
 # TODO: dimensions, column types, missing values, sample IDs
+dat_clean <- read_tsv(here("data", "02_dat_clean.tsv"))
+sample_metadata_clean <- read_tsv(here("data", "02_sample_metadata_clean.tsv"))
+sample_ids <- colnames(dat_clean)[-c(1, 2)]
+
+identical(sample_ids, sample_metadata_clean$sample_id)
 ```
 
 ## Save output
