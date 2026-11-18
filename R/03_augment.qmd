@@ -33,22 +33,41 @@ sample_metadata_clean <- read_tsv(here("data", "02_sample_metadata_clean.tsv"))
 
 ```{r}
 #| label: 03_checks
-# TODO: dimensions, column types, missing values, sample IDs
 
+# Extract sample IDs from the expression matrix, excluding probe_id and gene_id
 sample_ids <- colnames(dat_clean)[-c(1, 2)]
 
+# Check that sample IDs match the metadata and are in the same order
 identical(sample_ids, sample_metadata_clean$sample_id)
 
+# Extract expression values as a numeric matrix
 expression_values <- dat_clean |>
   select(-probe_id, -gene_id) |>
   as.matrix()
 
+# Count negative expression values
 sum(expression_values < 0, na.rm = TRUE)
+
+# Count zero expression values
 sum(expression_values == 0, na.rm = TRUE)
+
+# Count missing expression values
 sum(is.na(expression_values))
+
+# Summarize the distribution of expression values
 summary(as.vector(expression_values))
+
+# Count negative expression values per sample
 colSums(expression_values < 0)
+
+# Calculate the percentage of negative values per sample
 round(colMeans(expression_values < 0) * 100, 2)
+
+# Inspect the structure and column types of the dataset
+str(dat_clean)
+
+# Check the dimensions (number of rows and columns)
+dim(dat_clean)
 ```
 
 ## Save output
