@@ -101,10 +101,3 @@ saveRDS(
   here("data", "03_sample_metadata_aug.rds")
 )
 ```
-
-```{r}
-metadata_test <- readRDS(here("data", "03_sample_metadata_aug.rds"))
-
-levels(metadata_test$tissue_group)
-```
-
