@@ -9,7 +9,7 @@ Create derived variables and analysis-ready structure.
 |            | File                    |
 |------------|-------------------------|
 | **Reads**  | `data/02_dat_clean.tsv` |
-| **Writes** | `data/03_dat_aug.tsv`   |
+| **Writes** | `03_sample_metadata_aug.rds`   |
 
 ## Setup
 
