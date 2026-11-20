@@ -6,10 +6,15 @@ Sample overview, expression distributions, summary tables and exploratory plots.
 
 ## Input / Output
 
-|            | File                  |
-|------------|-----------------------|
-| **Reads**  | `data/03_dat_aug.tsv` |
-| **Writes** | `04_key_plot_1.png`   |
++---------------+-----------------------------------+
+|               | File                              |
++===============+===================================+
+| **Reads**     | `data/03_sample_metadata_aug.rds` |
+|               |                                   |
+|               | `data/02_dat_clean.tsv`           |
++---------------+-----------------------------------+
+| **Writes**    | `Descriptive plots at results/`   |
++---------------+-----------------------------------+
 
 ## Setup
 
@@ -25,17 +30,78 @@ source(here("R", "99_proj_func.R"))
 
 ```{r}
 #| label: 04_load-data
-# TODO: replace with the real loading code
-# dat_aug <- read_tsv(here("data", "03_dat_aug.tsv"))
+dat_clean <- read_tsv(
+  here("data", "02_dat_clean.tsv")
+)
+metadata_aug <- read_rds(here("data", "03_sample_metadata_aug.rds"))
 ```
 
-## Initial checks
+##Analysis
+
+### Sample Composition
+
+#### Count Samples percentage
 
 ```{r}
-#| label: 04_checks
-# TODO: dimensions, column types, missing values, sample IDs
+sample_counts <- metadata_aug |>
+  count(tissue_group) |>
+  mutate(
+    percentage = (n/sum(n))*100
+  )
 ```
-##Analysis
+
+#### Plot
+
+```{r}
+ggplot(sample_counts,aes(
+  x=tissue_group,
+  y=n,
+  fill=tissue_group))+
+  geom_col()+
+  geom_text(aes(label = n), vjust = -0.5)+
+  labs(
+    title = 'Number of samples in each group',
+    x = 'Tissue group',
+    y = 'Number of Samples'
+  )+
+  theme_classic()+
+  theme(legend.position = "none")
+```
+
+### Characteristics distribution
+
+#### Count characteristics percentage
+
+```{r}
+characteristic_counts<-metadata_aug |>
+  count(characteristic_1) |>
+  mutate(
+    percentage = (n/sum(n))*100
+  )
+```
+
+#### Plot
+
+```{r}
+ggplot(characteristic_counts,aes(
+  x=characteristic_1,
+  y=n,
+  fill = characteristic_1))+
+  geom_col()+
+  geom_text(aes(label=n),vjust = -0.3)+
+  labs(
+    title = 'Number of samples with each characteristic',
+    x='characteristics',
+    y='Number of samples'
+  )+
+  theme_classic()+
+  theme(legend.position = 'none')
+```
+
+### Expression Summary Statistics
+
+#
+
 
 ###Distribution
 
@@ -55,7 +121,6 @@ p1 <- ggplot(df_counts, aes(x=expression)) + # df_counts: raw counts matrix, exp
       theme_classic(base_size = 13)
 p1
 ```
-
 
 ## Save output
 
