@@ -77,9 +77,21 @@ Using the map()-function, add a new line to your pipeline, where you add a new v
 ```{r}
 gravier_clean_aug_long_nested <- gravier_clean_aug_long_nested |>
   mutate(model_object = map(.x = data,
-                   .f = ~lm(formula = expression ~ state,
-                            data = .x)))
+                            .f = ~lm(formula = expression ~ state,
+                                     data = .x)))
 
+```
+
+### Tidying the model object
+
+```{r}
+model_object <- model_object |>  
+                tidy(conf.int = TRUE,
+                conf.level = 0.95)
+```
+
+```{r}
+gravier_estimates <-
 ```
 
 ## Save output
