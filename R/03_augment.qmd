@@ -69,10 +69,42 @@ str(dat_clean)
 # Check the dimensions (number of rows and columns)
 dim(dat_clean)
 ```
+## Convert group into factor
+
+```{r}
+#| label: 03_convert
+
+metadata_aug <- sample_metadata_clean |>
+  mutate(
+    tissue_group = factor(
+      tissue_group,
+      levels = c('Normal breast','Tumour')
+    )
+  )
+
+#checks
+levels(metadata_aug$tissue_group)
+
+table(metadata_aug$tissue_group)
+
+str(metadata_aug)
+```
+
+
 
 ## Save output
 
 ```{r}
 #| label: 03_save
-# TODO: write_tsv(dat_load, here("data", "03_dat_aug.tsv"))
+saveRDS(
+  metadata_aug,
+  here("data", "03_sample_metadata_aug.rds")
+)
 ```
+
+```{r}
+metadata_test <- readRDS(here("data", "03_sample_metadata_aug.rds"))
+
+levels(metadata_test$tissue_group)
+```
+
