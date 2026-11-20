@@ -52,13 +52,6 @@ library(tidyr)
 
 ### Creating the data frame for linear models
 
-```{r}
-gravier_clean_aug <- gravier_clean |>
-  mutate(y = case_when(y == "Tumour" ~ 1,
-                       y == "Normal breast" ~ 0)) |> 
-  relocate(early_metastasis = y)
-```
-
 ### Creating a long augment data
 
 We need to create the long augment data so that have all the genes defined in one column. This way we are able to group the data by gene. The clean augment data should contain genes instead of probes.
@@ -98,7 +91,16 @@ Creating factor from state
 
 ```{r}
 dat_clean_aug_long <- dat_clean_aug_long |>
-  mutate(state = factor(state, levels = c(0, 1)))
+  as_tibble() |>
+  mutate(
+    gene_id = as.character(gene_id),
+    state = as.numeric(as.character(state))
+  ) |>
+  relocate(state)
+```
+
+```{r}
+glimpse(dat_clean_aug_long)
 ```
 
 ### Group by gene
@@ -107,27 +109,174 @@ Creating a dplyr pipeline, use the group_by() function to group your gravier_cle
 
 ```{r}
 dat_clean_aug_long_nested <- dat_clean_aug_long |>
-  group_by(gene_id) |>
+  dplyr::group_by(gene_id) |>
   tidyr::nest()
 ```
 
-### Adding a new variable model object
+### Creating the model object
 
 Using the map()-function, add a new line to your pipeline, where you add a new variable model_object to your gravier_clean_aug_long_nested dataset, which R will compute *per* gene.
 
 ```{r}
-model_object <- model_object |>  
-                tidy(conf.int = TRUE,
-                conf.level = 0.95)
+model_object = map(.x = dat_clean_aug_long_nested$data,
+                   .f = ~lm(formula = expression ~ state,
+                              data= .x))
 ```
 
 #### Tidying the model object
 
 ```{r}
-gravier_clean_aug_long_nested <- gravier_clean_aug_long_nested |>
+dat_clean_aug_long_nested <- dat_clean_aug_long_nested |>
    ungroup() |>
   mutate(model_object_tidy = map(.x = model_object,
                    .f = ~ tidy(.x, conf.int = TRUE, conf.level = 0.95)))
+```
+
+### Estimates for the data
+
+```{r}
+dat_estimates <- unnest(dat_clean_aug_long_nested, model_object_tidy)
+```
+
+```{r}
+dat_estimates
+```
+
+```{r}
+dat_estimates <- dat_estimates |>
+  filter(term == "state") |>
+  select(gene_id, p.value, estimate, conf.low, conf.high) |>
+  ungroup()
+```
+
+```{r}
+dat_estimates
+```
+
+### Examine significance
+
+```{r}
+dat_estimates <- dat_estimates |>
+  mutate(
+    q.value = p.adjust(p.value),
+    significant = q.value < 0.05
+  )
+```
+
+```{r}
+dat_estimates
+```
+
+```{r}
+dat_estimates <- dat_estimates |>
+  mutate(
+    q.value = p.adjust(p.value),
+    is_significant = case_when(q.value <= 0.05 ~ "yes",
+                               q.value > 0.05 ~ "no")
+  )
+```
+
+```{r}
+dat_estimates <- dat_estimates|>
+  mutate(
+    p_adj = p.adjust(p.value, method = "bonferroni"),
+    significant = p_adj < 0.05,
+    label = if_else(significant, gene_id, "")
+  )
+```
+
+## Visualizing data
+
+```{r}
+library(ggplot2)
+library(ggrepel)
+
+ggplot(dat_estimates,
+       aes(x = estimate, y = -log10(p.value))) +
+  geom_point(
+    aes(color = significant),
+    alpha = 0.5
+  ) +
+  scale_color_manual(
+    values = c("FALSE" = "#F8766D",
+               "TRUE" = "#00BFC4")
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+# With shifting and log2() transformation
+
+```{r}
+shift <- 1 - min(dat_clean_aug_long$expression, na.rm = TRUE)
+
+dat_clean_aug_long_transformed <- dat_clean_aug_long |>
+  mutate(expression_log2 = log2(expression + shift))
+shift
+```
+
+Exclude the original expression
+
+```{r}
+dat_clean_aug_long_transformed <-dat_clean_aug_long_transformed|>
+  select(-expression)
+```
+
+```{r}
+dat_clean_aug_long_transformed_nested <- dat_clean_aug_long_transformed |>
+  dplyr::group_by(gene_id) |>
+  tidyr::nest()
+```
+
+```{r}
+model_object_transformed = map(.x = dat_clean_aug_long_transformed_nested$data,
+                   .f = ~lm(formula = expression_log2 ~ state,
+                              data= .x))
+```
+
+```{r}
+dat_clean_aug_long_transformed_nested <- dat_clean_aug_long_transformed_nested |>
+   ungroup() |>
+  mutate(model_object_transformed_tidy = map(.x = model_object_transformed,
+                   .f = ~ tidy(.x, conf.int = TRUE, conf.level = 0.95)))
+```
+
+```{r}
+dat_transformed_estimates <- unnest(dat_clean_aug_long_transformed_nested, model_object_transformed_tidy)
+```
+
+```{r}
+dat_transformed_estimates <- dat_transformed_estimates |>
+  filter(term == "state") |>
+  select(gene_id, p.value, estimate, conf.low, conf.high) |>
+  ungroup()
+```
+
+```{r}
+dat_transformed_estimates <- dat_transformed_estimates|>
+  mutate(
+    p_adj = p.adjust(p.value, method = "bonferroni"),
+    significant = p_adj < 0.05,
+    label = if_else(significant, gene_id, "")
+  )
+```
+
+```{r}
+library(ggplot2)
+library(ggrepel)
+
+ggplot(dat_transformed_estimates,
+       aes(x = estimate, y = -log10(p.value))) +
+  geom_point(
+    aes(color = significant),
+    alpha = 0.5
+  ) +
+  scale_color_manual(
+    values = c("FALSE" = "#F8766D",
+               "TRUE" = "#00BFC4")
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
 ```
 
 ## Save output
