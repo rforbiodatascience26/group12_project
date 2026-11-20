@@ -47,17 +47,58 @@ source(here("R", "99_proj_func.R"))
 ```{r}
 library(tidyverse)
 library(broom)
+library(tidyr)
+```
+
+### Creating the data frame for linear models
+
+```{r}
+gravier_clean_aug <- gravier_clean |>
+  mutate(y = case_when(y == "Tumour" ~ 1,
+                       y == "Normal breast" ~ 0)) |> 
+  relocate(early_metastasis = y)
 ```
 
 ### Creating a long augment data
 
 We need to create the long augment data so that have all the genes defined in one column. This way we are able to group the data by gene. The clean augment data should contain genes instead of probes.
 
+Keeping only the gene, and expression
+
 ```{r}
-gravier_clean_aug_long <- pivot_longer(data = gravier_clean_aug,
-                                       cols= -state, #state will be either tumor or normal
-                                       names_to = "genes", 
+dat_clean_aug <- dat_clean |>
+  select(-probe_id)
+```
+
+```{r}
+dat_clean_aug_long <- pivot_longer(data = dat_clean_aug ,
+                                       cols = starts_with("GSM"),
+                                       names_to = "sample", 
                                        values_to = "expression")
+```
+
+Adding diseased/ healthy
+
+```{r}
+dat_clean_aug_long <- dat_clean_aug_long |>
+  mutate(state = case_when(
+    metadata_aug$tissue_group[match(sample, metadata_aug$sample_id)] == "Tumour" ~ 1,
+    metadata_aug$tissue_group[match(sample, metadata_aug$sample_id)] == "Normal breast" ~ 0
+  ))
+```
+
+Keeping only genes and expression
+
+```{r}
+dat_clean_aug_long <- dat_clean_aug_long |>
+  select(-sample)
+```
+
+Creating factor from state
+
+```{r}
+dat_clean_aug_long <- dat_clean_aug_long |>
+  mutate(state = factor(state, levels = c(0, 1)))
 ```
 
 ### Group by gene
@@ -65,9 +106,9 @@ gravier_clean_aug_long <- pivot_longer(data = gravier_clean_aug,
 Creating a dplyr pipeline, use the group_by() function to group your gravier_clean_aug_long dataset by gene and then add the nest() to your pipeline.
 
 ```{r}
-gravier_clean_aug_long_nested <- gravier_clean_aug_long |> 
-  group_by(genes) |>
-  nest()
+dat_clean_aug_long_nested <- dat_clean_aug_long |>
+  group_by(gene_id) |>
+  tidyr::nest()
 ```
 
 ### Adding a new variable model object
