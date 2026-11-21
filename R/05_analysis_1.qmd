@@ -38,11 +38,11 @@ source(here("R", "99_proj_func.R"))
 
 ## Analysis
 
-### **Define the primary hypothesis**
+## **Define the primary hypothesis**
 
 **Research question:** Does gene expression differ between tumour and normal breast tissue?
 
-### Loading libraries
+## Loading libraries
 
 ```{r}
 library(tidyverse)
@@ -50,7 +50,7 @@ library(broom)
 library(tidyr)
 ```
 
-### Creating the data frame for linear models
+## Creating the data frame for linear models
 
 ### Creating a long augment data
 
@@ -112,6 +112,8 @@ dat_clean_aug_long_nested <- dat_clean_aug_long |>
   dplyr::group_by(gene_id) |>
   tidyr::nest()
 ```
+
+## Model
 
 ### Creating the model object
 
@@ -207,6 +209,8 @@ ggplot(dat_estimates,
 
 # With shifting and log2() transformation
 
+### Shifting and log2() transforming the data
+
 ```{r}
 shift <- 1 - min(dat_clean_aug_long$expression, na.rm = TRUE)
 
@@ -215,12 +219,14 @@ dat_clean_aug_long_transformed <- dat_clean_aug_long |>
 shift
 ```
 
-Exclude the original expression
+### Exclude the original expression
 
 ```{r}
 dat_clean_aug_long_transformed <-dat_clean_aug_long_transformed|>
   select(-expression)
 ```
+
+### Group by gene
 
 ```{r}
 dat_clean_aug_long_transformed_nested <- dat_clean_aug_long_transformed |>
@@ -228,11 +234,17 @@ dat_clean_aug_long_transformed_nested <- dat_clean_aug_long_transformed |>
   tidyr::nest()
 ```
 
+## Model
+
+### Creating the model object
+
 ```{r}
 model_object_transformed = map(.x = dat_clean_aug_long_transformed_nested$data,
                    .f = ~lm(formula = expression_log2 ~ state,
                               data= .x))
 ```
+
+#### Tidying the model object
 
 ```{r}
 dat_clean_aug_long_transformed_nested <- dat_clean_aug_long_transformed_nested |>
