@@ -26,7 +26,8 @@ source(here("R", "99_proj_func.R"))
 ```{r}
 #| label: 05_load-data 
 # TODO: replace with the real loading code 
-# dat_aug <- read_rds(here("data", "03_sample_metadata_aug.rds"))
+ metadata_aug<- read_rds(here("data", "03_sample_metadata_aug.rds"))
+ dat_clean <-read_tsv(here("data", "02_dat_clean.tsv"))
 ```
 
 ## Initial checks
