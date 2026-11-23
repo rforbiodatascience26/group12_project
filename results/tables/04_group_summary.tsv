@@ -1,0 +1,3 @@
+tissue_group	n_samples	mean_of_median	mean_of_sd
+Normal breast	7	63.21485714285714	777.5200626601808
+Tumour	43	64.00027906976744	758.8870083941961

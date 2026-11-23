@@ -53,10 +53,10 @@ sample_counts <- metadata_aug |>
 #### Plot
 
 ```{r}
-ggplot(sample_counts,aes(
-  x=tissue_group,
-  y=n,
-  fill=tissue_group))+
+g1<-ggplot(sample_counts,aes(
+  x = tissue_group,
+  y = n,
+  fill = tissue_group))+
   geom_col()+
   geom_text(aes(label = n), vjust = -0.5)+
   labs(
@@ -66,6 +66,7 @@ ggplot(sample_counts,aes(
   )+
   theme_classic()+
   theme(legend.position = "none")
+g1
 ```
 
 The dataset consists of 50 breast tissue samples, including 43 tumour samples (86%) and 7 normal breast samples (14%). This substantial imbalance between the two groups should be considered when interpreting subsequent comparisons and statistical analyses.
@@ -85,19 +86,20 @@ characteristic_counts<-metadata_aug |>
 #### Plot
 
 ```{r}
-ggplot(characteristic_counts,aes(
-  x=characteristic_1,
-  y=n,
+g2<-ggplot(characteristic_counts,aes(
+  x = characteristic_1,
+  y = n,
   fill = characteristic_1))+
   geom_col()+
   geom_text(aes(label=n),vjust = -0.3)+
   labs(
     title = 'Number of samples with each characteristic',
-    x='characteristics',
-    y='Number of samples'
+    x ='characteristics',
+    y ='Number of samples'
   )+
   theme_classic()+
   theme(legend.position = 'none')
+g2
 ```
 
 The samples were further examined according to their original characteristics, including Basal, non-BLC, BRCA1 and NB classifications. The corresponding barplot illustrates the composition of the dataset and provides additional information about the samples included in each tissue group.
@@ -147,9 +149,9 @@ Descriptive statistics, including the mean, median, standard deviation, minimum,
 #### Exploratory Boxplot for every sample
 
 ```{r}
-ggplot(expr_long,aes(
-  x=sample_id,
-  y=expression,
+g3<-ggplot(expr_long,aes(
+  x = sample_id,
+  y = expression,
   fill = tissue_group))+
   geom_boxplot(outlier.shape = NA)+
   coord_cartesian(ylim = c(-200, 500)) +   #zoom in
@@ -161,6 +163,7 @@ ggplot(expr_long,aes(
   y = "dChip expression signal",
   fill = "Tissue group"
 )
+g3
 ```
 
 The per-sample boxplots show broadly similar median expression levels and interquartile ranges across the 50 samples. No major systematic differences in the overall distributions are visually apparent between tumour and normal breast samples. Outlier points were hidden and the displayed y-axis range was restricted to improve the visibility of the central distributions.
@@ -172,12 +175,12 @@ The per-sample boxplots show broadly similar median expression levels and interq
 ##### Density plot
 
 ```{r}
-ggplot(expr_long,aes(
-  x=expression,
+g4<-ggplot(expr_long,aes(
+  x = expression,
   colour = tissue_group,
   group = sample_id
 ))+
-  geom_density(alpha=0.3,n=4096)+
+  geom_density(alpha = 0.3,n = 4096)+
   coord_cartesian(xlim = c(-200, 500)) +
   theme_classic()+
   labs(
@@ -186,7 +189,7 @@ ggplot(expr_long,aes(
     y = "Density",
     colour = "Tissue group"
   )
-
+g4
 ```
 
 The density plots show substantial overlap in the overall expression distributions across samples, with most measurements concentrated at relatively low positive signal values and a long right tail. Some variation in peak height and distribution shape is visible, but there is no clear separation between tumour and normal breast samples based on their global expression distributions. This does not exclude differential expression at individual probe sets.
@@ -196,8 +199,8 @@ The density plots show substantial overlap in the overall expression distributio
 ##### Histogram plot - full view
 
 ```{r}
-ggplot(expr_long, aes(
-  x=expression))+
+g5<-ggplot(expr_long, aes(
+  x = expression))+
       geom_histogram(
       binwidth =  150,
       fill = "skyblue",
@@ -210,13 +213,14 @@ ggplot(expr_long, aes(
         y = "Number of probe measurements"
       ) +
       theme_classic(base_size = 13)
+g5
 ```
 
 ##### Histogram plot - zoomed view
 
 ```{r}
-ggplot(expr_long, aes(
-  x=expression))+
+g6<-ggplot(expr_long, aes(
+  x = expression))+
       geom_histogram(
       binwidth =  150,
       fill = "skyblue",
@@ -225,11 +229,12 @@ ggplot(expr_long, aes(
   coord_cartesian(xlim = c(-500, 1500))+
       labs(
         title = "Distribution of dChip expression signals",
-        subtitle = 'All 50 samples - restricted view',
+        subtitle = 'All 50 samples - zoomed view',
         x = "dChip expression signal",
         y = "Number of probe measurements"
       ) +
       theme_classic(base_size = 13)
+g6
 ```
 
 The histogram reveals a strongly right-skewed distribution of dChip expression signals. Most measurements are concentrated at relatively low values, while a smaller proportion extends towards substantially higher values. This wide range explains why the central distributions are difficult to visualize using the full expression scale.
@@ -243,7 +248,7 @@ expr_sum|>
 ```
 
 ```{r}
-expr_sum|>
+group_sum<-expr_sum|>
   group_by(tissue_group)|>
   summarise(
     n_samples = n(),
@@ -251,6 +256,7 @@ expr_sum|>
     mean_of_sd = mean(sd_expression),
     .groups = 'drop'
   )
+group_sum
 ```
 
 The mean of the sample-level median expression signals was similar between normal breast (63.21) and tumour samples (64.00). The average within-sample standard deviation was slightly higher in normal breast samples (777.52) than in tumour samples (758.89). These findings suggest broadly similar global expression distributions between the two groups. However, these descriptive summaries do not establish statistical significance or exclude differences in individual probe sets.
@@ -258,10 +264,10 @@ The mean of the sample-level median expression signals was similar between norma
 #### Sample-level median expression by tissue group
 
 ```{r}
-ggplot(expr_sum,aes(
-  x=tissue_group,
-  y=median_expression,
-  fill=tissue_group
+g7<-ggplot(expr_sum,aes(
+  x = tissue_group,
+  y = median_expression,
+  fill = tissue_group
 ))+
  geom_boxplot(outlier.shape = NA) +
  geom_jitter(width = 0.1, alpha = 0.6, size = 1.5)+
@@ -282,6 +288,7 @@ ggplot(expr_sum,aes(
 )+
   theme_classic()+
   theme(legend.position = 'none')
+g7
 ```
 
 The distribution of sample-level median expression signals was examined across tissue groups. Although the central values were similar between normal breast and tumour samples, the tumour group exhibited a wider spread of sample medians. One tumour sample showed a notably lower median expression value. However, the unequal sample sizes (43 tumour versus 7 normal breast samples) should be considered when interpreting these descriptive differences.
@@ -305,10 +312,10 @@ esr1_probe <- expr_long |>
 ```
 
 ```{r}
-ggplot(esr1_probe,aes(
-  x=tissue_group,
-  y=expression,
-  fill=tissue_group
+g8<-ggplot(esr1_probe,aes(
+  x = tissue_group,
+  y = expression,
+  fill = tissue_group
 ))+
   geom_boxplot(outlier.shape = NA)+
   geom_jitter(width = 0.1, alpha = 0.5, size = 1)+
@@ -320,6 +327,7 @@ ggplot(esr1_probe,aes(
   y = "dChip expression signal",
   fill = 'Tissue group'
   )
+g8
 ```
 
 Expression patterns were examined for nine probe sets annotated to ESR1. Considerable variability was observed across tumour samples, with several probe sets showing markedly elevated signals in subsets of tumours. Differences in expression patterns were also observed between probe sets annotated to the same gene. These findings highlight the heterogeneity of the tumour samples and the importance of interpreting microarray measurements at the probe-set level.
@@ -336,5 +344,17 @@ Although no missing expression measurements were detected in the cleaned dataset
 
 ```{r}
 #| label: 04_save
+ggsave(here("results","figures",'sample_composition.png'), plot=g1,dpi=100 )
+ggsave(here('results','figures','characteristics_distribution.png'), plot=g2,dpi=100 )
+ggsave(here('results','figures','dist_boxplot_every_sample.png'), plot=g3,dpi=100 )
+ggsave(here('results','figures','density.png'), plot=g4,dpi=100 )
+ggsave(here('results','figures','histogram_full.png'), plot=g5,dpi=100 )
+ggsave(here('results','figures','histogram_zoomed.png'), plot=g6,dpi=100 )
+ggsave(here('results','figures','boxplots_by_tissue_group.png'), plot=g7,dpi=100 )
+ggsave(here('results','figures','boxplots_selected.png'), plot=g8,dpi=100 )
 
+write_tsv(sample_counts,here('results','tables','04_sample_counts.tsv'))
+write_tsv(characteristic_counts,here('results','tables','04_characteristics_summary.tsv'))
+write_tsv(expr_sum,here('results','tables','04_expression_summary.tsv'))
+write_tsv(group_sum,here('results','tables','04_group_summary.tsv'))
 ```
