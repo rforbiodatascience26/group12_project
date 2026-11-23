@@ -149,6 +149,8 @@ Descriptive statistics, including the mean, median, standard deviation, minimum,
 #### Exploratory Boxplot for every sample
 
 ```{r}
+#| fig-width: 16
+#| fig-height: 7
 g3<-ggplot(expr_long,aes(
   x = sample_id,
   y = expression,
