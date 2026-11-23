@@ -36,7 +36,7 @@ dat_clean <- read_tsv(
 metadata_aug <- read_rds(here("data", "03_sample_metadata_aug.rds"))
 ```
 
-##Analysis
+## Analysis
 
 ### Sample Composition
 
@@ -104,7 +104,7 @@ The samples were further examined according to their original characteristics, i
 
 ### Expression Summary Statistics
 
-#### Fix dataset
+#### Reshape expression data
 
 ```{r}
 expr_long<-dat_clean |>
@@ -115,14 +115,14 @@ expr_long<-dat_clean |>
   )
 ```
 
-#### Merge with metada
+#### Merge with metadata
 
 ```{r}
 expr_long <- expr_long |>
   left_join(metadata_aug, by='sample_id')
 ```
 
-#### Sumamrize
+#### Summary statistics
 
 ```{r}
 expr_sum <- expr_long |>
@@ -179,7 +179,13 @@ ggplot(expr_long,aes(
 ))+
   geom_density(alpha=0.3,n=4096)+
   coord_cartesian(xlim = c(-200, 500)) +
-  theme_classic()
+  theme_classic()+
+  labs(
+    title = "Per-sample expression density",
+    x = "dChip expression signal",
+    y = "Density",
+    colour = "Tissue group"
+  )
 
 ```
 
@@ -249,7 +255,7 @@ expr_sum|>
 
 The mean of the sample-level median expression signals was similar between normal breast (63.21) and tumour samples (64.00). The average within-sample standard deviation was slightly higher in normal breast samples (777.52) than in tumour samples (758.89). These findings suggest broadly similar global expression distributions between the two groups. However, these descriptive summaries do not establish statistical significance or exclude differences in individual probe sets.
 
-#### Exploratory Boxplot for every tissue group
+#### Sample-level median expression by tissue group
 
 ```{r}
 ggplot(expr_sum,aes(
@@ -305,9 +311,15 @@ ggplot(esr1_probe,aes(
   fill=tissue_group
 ))+
   geom_boxplot(outlier.shape = NA)+
-  geom_jitter(width=0.1,alpha=0.5,size=1)+
-  facet_wrap(~probe_id,scales='free_y')+
-  theme_classic()
+  geom_jitter(width = 0.1, alpha = 0.5, size = 1)+
+  facet_wrap(~probe_id, scales = 'free_y')+
+  theme_classic()+
+  labs(
+  title = "ESR1 probe expression by tissue group",
+  x = "Tissue group",
+  y = "dChip expression signal",
+  fill = 'Tissue group'
+  )
 ```
 
 Expression patterns were examined for nine probe sets annotated to ESR1. Considerable variability was observed across tumour samples, with several probe sets showing markedly elevated signals in subsets of tumours. Differences in expression patterns were also observed between probe sets annotated to the same gene. These findings highlight the heterogeneity of the tumour samples and the importance of interpreting microarray measurements at the probe-set level.
