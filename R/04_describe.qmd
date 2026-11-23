@@ -68,6 +68,8 @@ ggplot(sample_counts,aes(
   theme(legend.position = "none")
 ```
 
+The dataset consists of 50 breast tissue samples, including 43 tumour samples (86%) and 7 normal breast samples (14%). This substantial imbalance between the two groups should be considered when interpreting subsequent comparisons and statistical analyses.
+
 ### Characteristics distribution
 
 #### Count characteristics percentage
@@ -98,33 +100,229 @@ ggplot(characteristic_counts,aes(
   theme(legend.position = 'none')
 ```
 
+The samples were further examined according to their original characteristics, including Basal, non-BLC, BRCA1 and NB classifications. The corresponding barplot illustrates the composition of the dataset and provides additional information about the samples included in each tissue group.
+
 ### Expression Summary Statistics
 
-#
-
-
-###Distribution
+#### Fix dataset
 
 ```{r}
-p1 <- ggplot(df_counts, aes(x=expression)) + # df_counts: raw counts matrix, expression: expression values
+expr_long<-dat_clean |>
+  pivot_longer(
+    cols = starts_with('GSM') ,
+    names_to = 'sample_id',
+    values_to = 'expression' 
+  )
+```
+
+#### Merge with metada
+
+```{r}
+expr_long <- expr_long |>
+  left_join(metadata_aug, by='sample_id')
+```
+
+#### Sumamrize
+
+```{r}
+expr_sum <- expr_long |>
+  group_by(sample_id,tissue_group)|>
+  summarize(
+    mean_expression = mean(expression),
+    median_expression = median(expression),
+    sd_expression = sd(expression),
+    min_expression = min(expression),
+    max_expression = max(expression),
+    first_quantile = quantile (expression,0.25),
+    third_quantile = quantile (expression,0.75),
+    .groups = 'drop'
+)
+expr_sum
+```
+
+Descriptive statistics, including the mean, median, standard deviation, minimum, maximum and quartiles, were calculated for each sample. These measurements provide an overview of the central tendency and variability of the processed expression signals and help identify potentially unusual samples.
+
+### Exploratory graphs
+
+#### Exploratory Boxplot for every sample
+
+```{r}
+ggplot(expr_long,aes(
+  x=sample_id,
+  y=expression,
+  fill = tissue_group))+
+  geom_boxplot(outlier.shape = NA)+
+  coord_cartesian(ylim = c(-200, 500)) +   #zoom in
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  labs(
+  title = "Expression distribution across samples",
+  x = "Sample ID",
+  y = "dChip expression signal",
+  fill = "Tissue group"
+)
+```
+
+The per-sample boxplots show broadly similar median expression levels and interquartile ranges across the 50 samples. No major systematic differences in the overall distributions are visually apparent between tumour and normal breast samples. Outlier points were hidden and the displayed y-axis range was restricted to improve the visibility of the central distributions.
+
+**Boxplot note:** Outlier points are not displayed, and the y-axis is restricted to −200 to 500 for visualization purposes. All observations were retained when calculating the boxplot statistics.
+
+#### Exploratory Distribution
+
+##### Density plot
+
+```{r}
+ggplot(expr_long,aes(
+  x=expression,
+  colour = tissue_group,
+  group = sample_id
+))+
+  geom_density(alpha=0.3,n=4096)+
+  coord_cartesian(xlim = c(-200, 500)) +
+  theme_classic()
+
+```
+
+The density plots show substantial overlap in the overall expression distributions across samples, with most measurements concentrated at relatively low positive signal values and a long right tail. Some variation in peak height and distribution shape is visible, but there is no clear separation between tumour and normal breast samples based on their global expression distributions. This does not exclude differential expression at individual probe sets.
+
+**Density plot note:** The x-axis is restricted to −200 to 500 for clarity. Density estimates were calculated using the complete expression data, without removing observations outside the displayed range.
+
+##### Histogram plot - full view
+
+```{r}
+ggplot(expr_long, aes(
+  x=expression))+
       geom_histogram(
-      bins = 50,
+      binwidth =  150,
       fill = "skyblue",
       color = "black",
       linewidth = 0.3) +
       labs(
-      title = "Raw counts",
-      subtitle = sample_id,
-      x = "Raw count",
-      y = "Number of genes"
+        title = "Distribution of dChip expression signals",
+        subtitle = 'All 50 samples - full view',
+        x = "dChip expression signal",
+        y = "Number of probe measurements"
       ) +
       theme_classic(base_size = 13)
-p1
 ```
+
+##### Histogram plot - zoomed view
+
+```{r}
+ggplot(expr_long, aes(
+  x=expression))+
+      geom_histogram(
+      binwidth =  150,
+      fill = "skyblue",
+      color = "black",
+      linewidth = 0.3) +
+  coord_cartesian(xlim = c(-500, 1500))+
+      labs(
+        title = "Distribution of dChip expression signals",
+        subtitle = 'All 50 samples - restricted view',
+        x = "dChip expression signal",
+        y = "Number of probe measurements"
+      ) +
+      theme_classic(base_size = 13)
+```
+
+The histogram reveals a strongly right-skewed distribution of dChip expression signals. Most measurements are concentrated at relatively low values, while a smaller proportion extends towards substantially higher values. This wide range explains why the central distributions are difficult to visualize using the full expression scale.
+
+### Comparing expression variability across samples
+
+```{r}
+expr_sum|>
+  arrange(desc(sd_expression))|>
+  slice_head(n=5)
+```
+
+```{r}
+expr_sum|>
+  group_by(tissue_group)|>
+  summarise(
+    n_samples = n(),
+    mean_of_median = mean(median_expression),
+    mean_of_sd = mean(sd_expression),
+    .groups = 'drop'
+  )
+```
+
+The mean of the sample-level median expression signals was similar between normal breast (63.21) and tumour samples (64.00). The average within-sample standard deviation was slightly higher in normal breast samples (777.52) than in tumour samples (758.89). These findings suggest broadly similar global expression distributions between the two groups. However, these descriptive summaries do not establish statistical significance or exclude differences in individual probe sets.
+
+#### Exploratory Boxplot for every tissue group
+
+```{r}
+ggplot(expr_sum,aes(
+  x=tissue_group,
+  y=median_expression,
+  fill=tissue_group
+))+
+ geom_boxplot(outlier.shape = NA) +
+ geom_jitter(width = 0.1, alpha = 0.6, size = 1.5)+
+  labs(
+    title = "Expression distribution across groups",
+    subtitle = "sample-level median expression",
+  x = "Tissue",
+  y = "dChip median expression signal",
+  fill = "Tissue"
+  )+
+  geom_text(
+  data = expr_sum |>
+    filter(tissue_group == "Tumour") |>
+    slice_min(median_expression, n = 1),
+  aes(label = sample_id),
+  nudge_x = 0.25,
+  size = 3.5
+)+
+  theme_classic()+
+  theme(legend.position = 'none')
+```
+
+The distribution of sample-level median expression signals was examined across tissue groups. Although the central values were similar between normal breast and tumour samples, the tumour group exhibited a wider spread of sample medians. One tumour sample showed a notably lower median expression value. However, the unequal sample sizes (43 tumour versus 7 normal breast samples) should be considered when interpreting these descriptive differences.
+
+### Expression of selected probes between groups
+
+#### Selection of ESR1 for exploratory analysis
+
+ESR1 (Estrogen Receptor 1) was selected for exploratory analysis because of its established biological relevance in breast cancer. It encodes estrogen receptor alpha, which plays an important role in breast cancer classification and hormone-dependent tumour growth. ESR1 expression is particularly relevant when investigating differences between breast tissue samples and tumour heterogeneity. 
+
+```{r}
+expr_long |>
+  filter(gene_id == "2099") |>
+  distinct(probe_id, gene_id)
+```
+The dataset contains nine probe sets annotated to ESR1, allowing us to examine expression variability between tumour and normal breast samples, as well as differences between probes targeting the same gene. This analysis is descriptive and does not establish differential expression.
+
+```{r}
+esr1_probe <- expr_long |>
+  filter(gene_id == "2099")
+```
+
+```{r}
+ggplot(esr1_probe,aes(
+  x=tissue_group,
+  y=expression,
+  fill=tissue_group
+))+
+  geom_boxplot(outlier.shape = NA)+
+  geom_jitter(width=0.1,alpha=0.5,size=1)+
+  facet_wrap(~probe_id,scales='free_y')+
+  theme_classic()
+```
+
+Expression patterns were examined for nine probe sets annotated to ESR1. Considerable variability was observed across tumour samples, with several probe sets showing markedly elevated signals in subsets of tumours. Differences in expression patterns were also observed between probe sets annotated to the same gene. These findings highlight the heterogeneity of the tumour samples and the importance of interpreting microarray measurements at the probe-set level.
+
+## Dataset Limitations
+
+Several limitations should be considered when interpreting the results. First, the dataset is strongly imbalanced, containing 43 tumour samples and only 7 normal breast samples, which limits the precision of group comparisons. Second, the expression values are dChip-processed microarray signals rather than raw RNA-seq counts. The presence of negative signal values also requires careful consideration of the expression scale before statistical modelling.
+
+Furthermore, individual genes may be represented by multiple probe sets, which can exhibit different expression patterns, as observed for ESR1. Finally, the tumour samples represent biologically heterogeneous categories, potentially contributing to variability within the tumour group.
+
+Although no missing expression measurements were detected in the cleaned dataset, these limitations should be considered when interpreting the exploratory plots and subsequent statistical results.
 
 ## Save output
 
 ```{r}
 #| label: 04_save
-# TODO: create the plot
+
 ```
