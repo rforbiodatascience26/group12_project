@@ -6,10 +6,15 @@ Create derived variables and analysis-ready structure.
 
 ## Input / Output
 
-|            | File                    |
-|------------|-------------------------|
-| **Reads**  | `data/02_dat_clean.tsv` |
-| **Writes** | `03_sample_metadata_aug.rds`   |
++---------------+-------------------------------------+
+|               | File                                |
++===============+=====================================+
+| **Reads**     | `data/02_dat_clean.tsv`             |
+|               |                                     |
+|               | `data/02_sample_metadata_clean.tsv` |
++---------------+-------------------------------------+
+| **Writes**    | `03_sample_metadata_aug.rds`        |
++---------------+-------------------------------------+
 
 ## Setup
 
@@ -18,7 +23,6 @@ Create derived variables and analysis-ready structure.
 #| message: false
 library(tidyverse)
 library(here)
-source(here("R", "99_proj_func.R"))
 ```
 
 ## Load data
@@ -45,6 +49,8 @@ expression_values <- dat_clean |>
   select(-probe_id, -gene_id) |>
   as.matrix()
 
+is.numeric(expression_values)
+
 # Count negative expression values
 sum(expression_values < 0, na.rm = TRUE)
 
@@ -69,6 +75,7 @@ str(dat_clean)
 # Check the dimensions (number of rows and columns)
 dim(dat_clean)
 ```
+
 ## Convert group into factor
 
 ```{r}
@@ -89,8 +96,6 @@ table(metadata_aug$tissue_group)
 
 str(metadata_aug)
 ```
-
-
 
 ## Save output
 
