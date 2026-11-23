@@ -6,15 +6,15 @@ Sample overview, expression distributions, summary tables and exploratory plots.
 
 ## Input / Output
 
-+---------------+-----------------------------------+
-|               | File                              |
-+===============+===================================+
-| **Reads**     | `data/03_sample_metadata_aug.rds` |
-|               |                                   |
-|               | `data/02_dat_clean.tsv`           |
-+---------------+-----------------------------------+
-| **Writes**    | `Descriptive plots at results/`   |
-+---------------+-----------------------------------+
++---------------+----------------------------------------------------------------------+
+|               | File                                                                 |
++===============+======================================================================+
+| **Reads**     | `data/03_sample_metadata_aug.rds`                                    |
+|               |                                                                      |
+|               | `data/02_dat_clean.tsv`                                              |
++---------------+----------------------------------------------------------------------+
+| **Writes**    | `Descriptive plots and tables at results/figures and results/tables` |
++---------------+----------------------------------------------------------------------+
 
 ## Setup
 
@@ -297,13 +297,14 @@ The distribution of sample-level median expression signals was examined across t
 
 #### Selection of ESR1 for exploratory analysis
 
-ESR1 (Estrogen Receptor 1) was selected for exploratory analysis because of its established biological relevance in breast cancer. It encodes estrogen receptor alpha, which plays an important role in breast cancer classification and hormone-dependent tumour growth. ESR1 expression is particularly relevant when investigating differences between breast tissue samples and tumour heterogeneity. 
+ESR1 (Estrogen Receptor 1) was selected for exploratory analysis because of its established biological relevance in breast cancer. It encodes estrogen receptor alpha, which plays an important role in breast cancer classification and hormone-dependent tumour growth. ESR1 expression is particularly relevant when investigating differences between breast tissue samples and tumour heterogeneity.
 
 ```{r}
 expr_long |>
   filter(gene_id == "2099") |>
   distinct(probe_id, gene_id)
 ```
+
 The dataset contains nine probe sets annotated to ESR1, allowing us to examine expression variability between tumour and normal breast samples, as well as differences between probes targeting the same gene. This analysis is descriptive and does not establish differential expression.
 
 ```{r}
@@ -346,7 +347,7 @@ Although no missing expression measurements were detected in the cleaned dataset
 #| label: 04_save
 ggsave(here("results","figures",'sample_composition.png'), plot=g1,dpi=100 )
 ggsave(here('results','figures','characteristics_distribution.png'), plot=g2,dpi=100 )
-ggsave(here('results','figures','dist_boxplot_every_sample.png'), plot=g3,dpi=100 )
+ggsave(here('results','figures','dist_boxplot_every_sample.png'), plot=g3,width=16, height=7, dpi=100 )
 ggsave(here('results','figures','density.png'), plot=g4,dpi=100 )
 ggsave(here('results','figures','histogram_full.png'), plot=g5,dpi=100 )
 ggsave(here('results','figures','histogram_zoomed.png'), plot=g6,dpi=100 )
