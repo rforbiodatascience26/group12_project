@@ -32,8 +32,6 @@ Data are **not** stored on GitHub. To reproduce the project:
    them in `data/_raw/` with these file names: `<expected file names>`.
 3. Raw files must never be edited.
 
-<Replace with the exact steps from `01_load.qmd` once Member 1 has settled them.>
-
 ## How to Run the Project
 
 1. Clone the repository and open `group12_project.Rproj` in RStudio.
