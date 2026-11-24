@@ -6,17 +6,21 @@ Primary tumour-versus-normal differential-expression analysis.
 
 ## Input / Output
 
-|            | File                  |
-|------------|-----------------------|
-| **Reads**  | `data/03_dat_aug.tsv` |
-| **Writes** | `05_key_plot_2.png`   |
++---------------+-----------------------------------+
+|               | File                              |
++===============+===================================+
+| **Reads**     | `data/03_sample_metadata_aug.rds` |
+|               |                                   |
+|               | `data/02_dat_clean.tsv`           |
++---------------+-----------------------------------+
+| **Writes**    | `05_key_plot_2.png`               |
++---------------+-----------------------------------+
 
 ## Setup
 
 ```{r}
 #| label: 05_setup
 #| message: false 
-library(tidyverse) 
 library(here) 
 source(here("R", "99_proj_func.R"))
 ```
@@ -26,7 +30,21 @@ source(here("R", "99_proj_func.R"))
 ```{r}
 #| label: 05_load-data 
 # TODO: replace with the real loading code 
-# dat_aug <- read_tsv(here("data", "03_dat_aug.tsv"))
+ metadata_aug<- read_rds(here("data", "03_sample_metadata_aug.rds"))
+ dat_clean <-read_tsv(here("data", "02_dat_clean.tsv"))
+```
+
+## Load libraries
+
+```{r}
+library(tidyverse) 
+library(broom) 
+library(tidyr) 
+library(ggplot2) 
+library(ggrepel) 
+library(dplyr) 
+library(vsn) 
+library(gridExtra)
 ```
 
 ## Initial checks
@@ -34,6 +52,436 @@ source(here("R", "99_proj_func.R"))
 ```{r}
 #| label: 05_checks 
 # TODO: dimensions, column types, missing values, sample IDs
+
+#Dimensions, column types
+head(dat_clean, n = 10)
+#Checking for missing values
+sum(is.na(dat_clean))
+sum(is.na(dat_clean$probe_id))
+sum(is.na(dat_clean$gene_id))
+#Checking duplicates
+#Genes
+length(unique(na.omit(dat_clean$gene_id)))
+length(na.omit(dat_clean$gene_id))
+#Probes
+length(unique(dat_clean$probe_id))
+length(na.omit(dat_clean$probe_id))
+```
+
+All 10,541 missing values (NA) in *dat_clean* occur in *gene_id*, with 0 missing values in *probe_id*. Across all 54,675 rows, *probe_ids* contains no duplicates (54,675 unique values).
+
+Repeated gene entries arise because platforms such as the Affymetrix Human Genome U133 Plus 2.0 array (GPL570) assay expression at the probe-set level rather than one measurement per gene, allowing multiple probe sets-targeting different exons, transcript isoforms, or re-annotated transcripts-to map to the same gene. In *dat_clean*, the 44,134 non-missing gene_id entries correspond to 21,879 unique *gene_id* values.
+
+## Analysis
+
+### **Define the primary hypothesis**
+
+**Research question:** Does expression of probes differ between tumour and normal breast tissue?
+
+### Exploring data for differential expression analysis
+
+#### Creating the long augment data
+
+We reshape `dat_clean` into long format so that all sample IDs (`GSM...`) sit in a single `sample` column and their measurements sit in a single `expression` column, while retaining `probe_id` and `gene_id` for each row. This makes it easy to visualize expression distributions across samples.
+
+```{r}
+dat_clean_long <- pivot_longer(data = dat_clean ,
+                                       cols = starts_with("GSM"),
+                                       names_to = "sample", 
+                                       values_to = "expression")
+```
+
+#### Distribution of expressions
+
+```{r}
+p1 <- ggplot(dat_clean_long,aes(x=expression))+
+  geom_histogram(bins = 50) +
+  theme_minimal() +
+  labs(
+    title = "Distribution of expression",
+    x = "Expression",
+    y = "Frequency"
+  )
+p1
+```
+
+The original expression data is heavily right-skewed on the linear scale, with most measurements concentrated near zero and a long right tail. We cannot apply a log2() transformation, hence to negative values.
+
+#### Check for outliers using boxplot
+
+```{r}
+ggplot(dat_clean_long, aes(y = expression)) +
+  geom_boxplot() +
+  theme_minimal() +
+  labs(title = "Boxplot of expression",
+       y = "Expression")
+
+```
+
+The boxplot of raw expression values shows the median and interquartile range compressed near zero due to extreme right-skewness, with extensive high-intensity outliers reaching above 40,000 and some negative values below zero.
+
+```{r}
+# 1. See the highest expression values and which probe + sample they belong to
+dat_clean_long |>
+  arrange(desc(expression)) |>
+  head(10)
+
+# 2. Count how many rows are above e.g. 20,000 or 40,000
+dat_clean_long |>
+  summarise(
+    above_20k = sum(expression > 20000, na.rm = TRUE),
+    above_30k = sum(expression > 30000, na.rm = TRUE),
+    above_40k = sum(expression > 40000, na.rm = TRUE)
+  )
+```
+
+To investigate the extreme upper outliers seen in the boxplot, we inspected the top 10 expression values and counted observations exceeding 20,000, 30,000, and 40,000. The highest single value (`41,916.43`, probe `217161_x_at` in `GSM194407`) stands well above the remaining top entries.
+
+We chose not to exclude the highest observation (`41,916.43` for probe `217161_x_at` in sample `GSM194407`) solely because it appears as an extreme value on the unlogged scale. High intensities can reflect genuine biological expression or probe characteristics, and extreme upper values are naturally compressed and variance-stabilized during downstream normalization.
+
+#### Investigate extreme low expression values
+
+```{r}
+# 10 lowest expression values
+dat_clean_long |>
+  arrange(expression) |>
+  head(10)
+```
+
+Inspecting the lowest values in the dChip-normalized dataset revealed large negative intensities down to `-5,899.13` (frequently involving probe `214456_x_at` across multiple samples), which rules out that the data is already `log2()`-transformed and means we cannot apply a plain `log2()` transformation directly.
+
+#### How frequent are the negative values
+
+```{r}
+dat_clean_long |>
+  summarise(
+    total = n(),
+    negative = sum(expression < 0, na.rm = TRUE),
+    zero = sum(expression == 0, na.rm = TRUE),
+    positive = sum(expression > 0, na.rm = TRUE),
+    percent_negative = mean(expression < 0, na.rm = TRUE) * 100
+  )
+```
+
+Across 2,733,750 total long-format expression entries, 152,899 (5.59%) are negative, 13 are zero, and 2,580,838 are positive, confirming that non-positive values are a substantial minority rather than rare edge cases
+
+#### Investigating the distribution of negative values
+
+```{r}
+summary(dat_clean_long$expression[
+  dat_clean_long$expression < 0
+])
+
+```
+
+-   75% of negative values are between −55.04 and 0.
+
+-   50% of negative values are between −19.00 and 0.
+
+-   25% of negative values are between −6.09 and 0.
+
+### Applying VSN transformation
+
+Based on our exploratory findings-strong right-skewness on a linear scale, upper intensities up to 41,916.43, and 152,899 (5.59%) negative plus 13 zero values (mostly modest negatives around a median of -19.00, down to -5,899.13)-we chose VSN over a direct log2() transformation or ad-hoc filtering/offsetting because it handles negative and zero values naturally, compresses extreme high values, and stabilizes variance while retaining potentially informative measurements.
+
+Furthermore, microarray expression measurements are known to potentially exhibit intensity-dependent measurement variability. Highly expressed genes often have greater absolute measurement variability than weakly expressed genes.
+
+VSN is specifically developed for microarray expression data that exhibit mean–variance dependence. It is an established statistical method designed to address the relationship between expression intensity and measurement variability.
+
+```{r}
+dat_clean_aug <- dat_clean |>
+ select(-gene_id)
+```
+
+Getting rid of gene id, since we are going to investigate the probes.
+
+```{r}
+# Extract only numerical expression columns
+expr <- dat_clean_aug |>
+  select(starts_with("GSM")) |>
+  as.matrix()
+
+# Check the expression matrix
+dim(expr)
+range(expr, na.rm = TRUE)
+
+# Fit VSN without additional sample-specific calibration
+vsn_fit <- vsn2(expr, calib = "none")
+
+# Transform expression values
+expr_vsn <- predict(vsn_fit, newdata = expr)
+
+# Reconstruct the wide-format dataset
+dat_clean_aug_vsn <- bind_cols(
+  dat_clean_aug |> select(-starts_with("GSM")),
+  as.data.frame(expr_vsn)
+)
+```
+
+We extracted the `GSM*` sample columns from `dat_clean_aug` into a numeric matrix, checked its dimensions and overall value range, fitted variance stabilizing normalization using `vsn2(..., calib = "none")` (appropriate given prior dChip normalization), applied the transformation via `predict()`, and reattached the non-sample columns to create `dat_clean_aug_vsn`.
+
+Variance stabilizing normalization (VSN) applies a generalized log-like transformation that stabilizes variance across expression levels, compresses high intensities similarly to a log scale, and remains well-defined across zero and negative values; fitting `vsn2(..., calib = "none")` transformed the expression matrix without adding extra sample-specific calibration on top of the existing dChip normalization.
+
+#### Comparing original expressions with the transformed expressions
+
+Used code: meanSdPlot(expr_vsn, plot = FALSE)
+
+A function from the vsn package that investigates the relationship between mean expression and standard deviation.
+
+```{r}
+p2 <- meanSdPlot(expr, plot = FALSE)$gg +
+  ggtitle("Before VSN") +
+  theme(legend.position = "bottom")
+
+p3 <- meanSdPlot(expr_vsn, plot = FALSE)$gg +
+  ggtitle("After VSN") +
+  theme(legend.position = "bottom")
+
+grid.arrange(p2, p3, ncol = 2)
+
+```
+
+In our original dataset, probe sets with higher average expression tend to have higher expression variance. This is what we call mean–variance dependence.
+
+After VSN transformation, the red line is relatively flat suggesting the variance becomes approximately independent of the mean expression level across probe sets.
+
+VSN has achived:
+
+-   Reduced the dependence of variance on mean expression.
+
+-   Compressed the large dynamic range.
+
+-   Retained the negative expression observations.
+
+-   Avoided the need for a large constant shift.
+
+-   Produced a more appropriate expression scale for differential expression analysis.
+
+```{r}
+# Before VSN
+boxplot(expr,
+        outline = FALSE,
+        las = 2,
+        cex.axis = 0.6,
+        main = "Before VSN",
+        ylab = "Expression",
+        col = "lightblue")
+
+# After VSN
+boxplot(expr_vsn,
+        outline = FALSE,
+        las = 2,
+        cex.axis = 0.6,
+        main = "After VSN",
+        ylab = "Transformed expression",
+        col = "lightgreen")
+
+```
+
+There are no glaring sample-level outliers for the original expression values.
+
+#### Creating the long format of vsn expressions
+
+```{r}
+dat_clean_aug_vsn_long <- pivot_longer(data = dat_clean_aug_vsn ,
+                                       cols = starts_with("GSM"),
+                                       names_to = "sample", 
+                                       values_to = "expression")
+```
+
+Distribution of expressions
+
+```{r}
+p4 <- ggplot(dat_clean_aug_vsn_long,aes(x=expression))+
+  geom_histogram(bins = 50) +
+  theme_minimal() +
+  labs(
+    title = "Distribution of VSN-transformed expression",
+    x = "Expression",
+    y = "Frequency"
+  )
+p4
+```
+
+```{r}
+p4 <- ggplot(dat_clean_aug_vsn_long,aes(x=expression))+
+  geom_histogram(bins = 50) +
+  theme_minimal() +
+  labs(
+    title = "Distribution of VSN-transformed expression",
+    x = "Expression",
+    y = "Frequency"
+  )
+p4
+```
+
+The VSN-transformed expression distribution is:
+
+-   Unimodal: There is one dominant peak around an expression value of 5.
+
+-   Approximately bell-shaped: The distribution is considerably more symmetric than before transformation.
+
+-   Slightly right-skewed: A longer right tail is still present.
+
+-   Compressed: The extremely large original expression values are now represented on a much smaller scale.
+
+-   Still containing negative values
+
+The VSN-transformed expression data are more suitable for linear modelling primarily because the transformation reduces mean-dependent variability, rather than simply making the distribution more normally distributed.
+
+#### Adding the state column
+
+```{r}
+glimpse(metadata_aug)
+count(metadata_aug, tissue_group)
+```
+
+```{r}
+dat_clean_aug_vsn_long <- dat_clean_aug_vsn_long |>
+  left_join(
+    metadata_aug |> select(sample_id, tissue_group),
+    by = c("sample" = "sample_id")
+  )
+```
+
+```{r}
+# See all tissue_group values (including NA for unmatched samples)
+count(dat_clean_aug_vsn_long, tissue_group)
+
+# Inspect any rows where tissue_group is NA or not one of your two main groups
+dat_clean_aug_vsn_long |>
+  filter(is.na(tissue_group) | !tissue_group %in% c("Tumour", "Normal breast")) |>
+  distinct(sample, tissue_group)
+```
+
+```{r}
+dat_clean_aug_vsn_long <- dat_clean_aug_vsn_long |>
+  filter(tissue_group %in% c("Tumour", "Normal breast")) |>
+  mutate(
+    state = case_when(
+      tissue_group == "Tumour" ~ 1,
+      tissue_group == "Normal breast" ~ 0
+    ))
+```
+
+```{r}
+sum(is.na(dat_clean_aug_vsn_long$state))
+```
+
+We don't need the sample
+
+```{r}
+dat_clean_aug_vsn_long <- dat_clean_aug_vsn_long |>
+                         select(-sample)
+```
+
+#### Nest, and group by probe
+
+Creating a dplyr pipeline, using the group_by() function to group dat_clean_aug_vsn_long dataset by probe and then adding the nest() to the pipeline.
+
+```{r}
+dat_clean_aug_vsn_long_nested <- dat_clean_aug_vsn_long |>
+  dplyr::filter(!is.na(probe_id)) |>
+  dplyr::group_by(probe_id) |>
+  tidyr::nest()
+```
+
+### Model
+
+#### Creating and tidying the model object
+
+Using the map()-function, adding a new line to the pipeline, where we add a new variable model_object to the dat_clean_aug_vsn_long_nested dataset, which R will compute per probe.
+
+### Creating the model object then the tidy model object
+
+```{r}
+dat_clean_aug_vsn_long_nested <- dat_clean_aug_vsn_long_nested |>
+  ungroup() |>
+  mutate(
+    model_object = map(
+      data,
+      ~lm(expression ~ state, data = .x)
+    ),
+    model_object_tidy = map(
+      model_object,
+      ~tidy(.x, conf.int = TRUE, conf.level = 0.95)
+    )
+  )
+```
+
+#### Estimates for the data
+
+```{r}
+dat_estimates <- unnest(dat_clean_aug_vsn_long_nested, model_object_tidy)
+```
+
+```{r}
+dat_estimates
+```
+
+Keeping only the 5 columns that we need.
+
+```{r}
+dat_estimates <- dat_estimates |>
+  filter(term == "state") |>
+  select(probe_id, p.value, estimate, conf.low, conf.high) |>
+  ungroup()
+```
+
+```{r}
+dat_estimates
+```
+
+#### Examine significance
+
+We check whether a gene is significantly differentially expressed between the two conditions
+
+```{r}
+dat_estimates <- dat_estimates|>
+  mutate(
+    p_adj = p.adjust(p.value, method = "BH"),
+    significant = p_adj < 0.05,
+    label = if_else(significant, probe_id, "")
+  )
+```
+
+### Visualizing data
+
+```{r}
+volcano_plot <- ggplot(dat_estimates,
+           aes(x = estimate, y = -log10(p_adj))) +
+           geom_point(
+           aes(color = significant),
+          alpha = 0.5
+         ) +
+         labs(
+         title = "Volcano plot of VSN-transformed expression",
+         x = "Estimated difference in VSN-transformed expression",
+        y = "-log10(adjusted p-value)"
+        )+
+        scale_color_manual(
+        values = c("FALSE" = "#F8766D",
+                    "TRUE" = "#00BFC4")
+        ) +
+      theme_minimal() +
+      theme(legend.position = "none")
+```
+
+The volcano plot of VSN-transformed expression values revealed statistically significant differential expression in both directions following multiple testing correction. An asymmetric distribution was observed, with a greater apparent concentration of highly significant probe sets exhibiting negative estimated expression differences. This suggests that lower expression in the comparison group may be more prevalent among the differentially expressed probe sets.
+
+### Quantifying findings
+
+```{r}
+dat_estimates |>
+  summarise(
+    total = n(),
+    significant = sum(p_adj < 0.05, na.rm = TRUE),
+    upregulated = sum(p_adj < 0.05 & estimate > 0,
+                      na.rm = TRUE),
+    downregulated = sum(p_adj < 0.05 & estimate < 0,
+                        na.rm = TRUE),
+    not_significant = sum(p_adj >= 0.05, na.rm = TRUE)
+  )
 ```
 
 ## Save output
@@ -41,4 +489,15 @@ source(here("R", "99_proj_func.R"))
 ```{r}
 #| label: 05_save 
 # TODO: create the plot
+dir.create(here("results"), showWarnings = FALSE, recursive = TRUE)
+
+ggsave(
+  filename = here("results", "05_key_plot_2.png"),
+  plot = volcano_plot,
+  width = 7,
+  height = 5,
+  dpi = 300
+)
 ```
+
+## 
