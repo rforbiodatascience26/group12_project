@@ -55,7 +55,7 @@ library(gridExtra)
 # TODO: dimensions, column types, missing values, sample IDs
 
 #Dimensions, column types
-glimpse(dat_clean)
+head(dat_clean, n = 10)
 #Checking for missing values
 sum(is.na(dat_clean))
 sum(is.na(dat_clean$probe_id))
