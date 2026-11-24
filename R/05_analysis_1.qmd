@@ -78,7 +78,7 @@ Repeated gene entries arise because platforms such as the Affymetrix Human Genom
 
 **Research question:** Does expression of probes differ between tumour and normal breast tissue?
 
-### Exploring data for differential gene expression analysis
+### Exploring data for differential expression analysis
 
 #### Creating the long augment data
 
@@ -98,7 +98,7 @@ p1 <- ggplot(dat_clean_long,aes(x=expression))+
   geom_histogram(bins = 50) +
   theme_minimal() +
   labs(
-    title = "Distribution of gene expression",
+    title = "Distribution of expression",
     x = "Expression",
     y = "Frequency"
   )
@@ -113,7 +113,7 @@ The original expression data is heavily right-skewed on the linear scale, with m
 ggplot(dat_clean_long, aes(y = expression)) +
   geom_boxplot() +
   theme_minimal() +
-  labs(title = "Boxplot of gene expression",
+  labs(title = "Boxplot of expression",
        y = "Expression")
 
 ```
@@ -296,7 +296,7 @@ p4 <- ggplot(dat_clean_aug_vsn_long,aes(x=expression))+
   geom_histogram(bins = 50) +
   theme_minimal() +
   labs(
-    title = "Distribution of VSN-transformed gene expression",
+    title = "Distribution of VSN-transformed expression",
     x = "Expression",
     y = "Frequency"
   )
@@ -308,7 +308,7 @@ p4 <- ggplot(dat_clean_aug_vsn_long,aes(x=expression))+
   geom_histogram(bins = 50) +
   theme_minimal() +
   labs(
-    title = "Distribution of VSN-transformed gene expression",
+    title = "Distribution of VSN-transformed expression",
     x = "Expression",
     y = "Frequency"
   )
