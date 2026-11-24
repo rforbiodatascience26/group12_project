@@ -30,131 +30,73 @@ source(here("R", "99_proj_func.R"))
  dat_clean <-read_tsv(here("data", "02_dat_clean.tsv"))
 ```
 
+## Loading libraries
+
+```{r}
+library(tidyverse) 
+library(broom) 
+library(tidyr) 
+library(ggplot2) 
+library(ggrepel) 
+library(dplyr) 
+library(vsn) 
+library(gridExtra)
+```
+
 ## Initial checks
 
 ```{r}
 #| label: 05_checks 
 # TODO: dimensions, column types, missing values, sample IDs
-```
 
-```{r}
+#Dimensions, column types
+glimpse(dat_clean)
+#Checking for missing values
 sum(is.na(dat_clean))
+sum(is.na(dat_clean$probe_id))
+sum(is.na(dat_clean$gene_id))
+#Checking duplicates
+#Genes
+length(unique(na.omit(dat_clean$gene_id)))
+length(na.omit(dat_clean$gene_id))
+#Probes
+length(unique(dat_clean$probe_id))
+length(na.omit(dat_clean$probe_id))
 ```
 
-```{r}
-dat_clean |>
-  count(gene_id, sort = TRUE) |>
-  filter(n > 1)
-```
+-   All missing values are within the gene_id-s.
 
-```{r}
-dat_clean_aug_vsn_long |>
-  count(gene_id, sort = TRUE)
-```
+-   Duplicate gene entries occur because microarray platforms such as the Affymetrix Human Genome U133 Plus 2.0 array (GPL570) measure expression at the probe-set level rather than as one entry per gene, allowing multiple probe sets—targeting different exons, transcript isoforms, or updated gene annotations—to map to the same gene. In `dat_clean`, this results in 44,134 non-missing `gene_id` rows corresponding to 21,879 unique genes.
+
+-   There are no duplicates within the probes.
 
 ## Analysis
 
-## Exploring data for differential gene expression analysis
-
-```{r}
-# Range and quantiles
-quantile(expr, c(0, 0.01, 0.25, 0.5, 0.75, 0.99, 1),
-         na.rm = TRUE)
-
-# Proportion of negative values
-mean(expr < 0, na.rm = TRUE)
-
-# Probe-specific means
-summary(rowMeans(expr, na.rm = TRUE))
-
-# Probe-specific standard deviations
-summary(apply(expr, 1, sd, na.rm = TRUE))
-```
-
-## **Define the primary hypothesis**
+### **Define the primary hypothesis**
 
 **Research question:** Does gene expression differ between tumour and normal breast tissue?
 
-## Loading libraries
-
-```{r}
-library(tidyverse)
-library(broom)
-library(tidyr)
-library(ggplot2)
-library(ggrepel)
-library(dplyr)
-library(vsn)
-library(gridExtra)
-```
-
-## Without shifting
-
-### Creating the data frame for linear models
+### Exploring data for differential gene expression analysis
 
 #### Creating the long augment data
 
-We need to create the long augment data so that have all the genes defined in one column. This way we are able to group the data by gene. The clean augment data should contain genes instead of probes.
-
-Keeping only the gene, and expression
+We need to create the long augment data so that have all the probes and genes defined in one column. Then we can visualize the distributions.
 
 ```{r}
-dat_clean_aug <- dat_clean |>
-  select(-probe_id)
-```
-
-```{r}
-dat_clean_aug_long <- pivot_longer(data = dat_clean_aug ,
+dat_clean_long <- pivot_longer(data = dat_clean ,
                                        cols = starts_with("GSM"),
                                        names_to = "sample", 
                                        values_to = "expression")
 ```
 
-There are a lot of genes with low expression
+There are a lot of genes with low expression, and there are negative values as well.
 
 #### Adding the state column
-
-```{r}
-dat_clean_aug_long <- dat_clean_aug_long |>
-  mutate(state = case_when(
-    metadata_aug$tissue_group[match(sample, metadata_aug$sample_id)] == "Tumour" ~ 1,
-    metadata_aug$tissue_group[match(sample, metadata_aug$sample_id)] == "Normal breast" ~ 0
-  ))
-```
-
-Checking if there is a state with NA value
-
-```{r}
-table(dat_clean_aug_long$state, useNA = "ifany")
-```
-
-Keeping only genes and expression
-
-```{r}
-dat_clean_aug_long <- dat_clean_aug_long |>
-  select(-sample)
-```
-
-Making sure everything is in the right format
-
-```{r}
-dat_clean_aug_long <- dat_clean_aug_long |>
-  as_tibble() |>
-  mutate(
-    gene_id = as.character(gene_id),
-    state = as.numeric(as.character(state))
-  ) |>
-  relocate(state)
-```
-
-```{r}
-glimpse(dat_clean_aug_long)
-```
 
 #### Distribution of expressions
 
 ```{r}
-p1 <- ggplot(dat_clean_aug_long,aes(x=expression))+
+p1 <- ggplot(dat_clean_long,aes(x=expression))+
   geom_histogram(bins = 50) +
   theme_minimal() +
   labs(
@@ -168,34 +110,43 @@ p1
 #### Check for outliers using boxplot
 
 ```{r}
-ggplot(dat_clean_aug_long, aes(y = expression)) +
+ggplot(dat_clean_long, aes(y = expression)) +
   geom_boxplot() +
   theme_minimal() +
   labs(title = "Boxplot of gene expression",
        y = "Expression")
 ```
 
-#### Investigate extreme expression values
-
 ```{r}
-# 20 highest expression values
-dat_clean_aug_long |>
+# 1. See the highest expression values and which probe + sample they belong to
+dat_clean_long |>
   arrange(desc(expression)) |>
-  head(20)
+  head(10)
 
+# 2. Count how many rows are above e.g. 20,000 or 40,000
+dat_clean_long |>
+  summarise(
+    above_20k = sum(expression > 20000, na.rm = TRUE),
+    above_30k = sum(expression > 30000, na.rm = TRUE),
+    above_40k = sum(expression > 40000, na.rm = TRUE)
+  )
 ```
 
+Although the exploratory boxplot of raw expression intensities shows an extreme observation around 40,000, this point represents a single probe measurement within one sample rather than an outlying array. Because high expression values in microarray data often reflect genuine biological signal-and sample-wise boxplots confirmed consistent overall distributions across all 62 arrays-this observation was retained rather than arbitrarily filtered out.
+
+#### Investigate extreme low expression values
+
 ```{r}
-# 20 lowest expression values
-dat_clean_aug_long |>
+# 10 lowest expression values
+dat_clean_long |>
   arrange(expression) |>
-  head(20)
+  head(10)
 ```
 
 #### How frequent are the negative values
 
 ```{r}
-dat_clean_aug_long |>
+dat_clean_long |>
   summarise(
     total = n(),
     negative = sum(expression < 0, na.rm = TRUE),
@@ -205,22 +156,13 @@ dat_clean_aug_long |>
   )
 ```
 
-#### Percentage of negative values
-
-```{r}
-neg_perc <- sum(dat_clean_aug_long$expression < 0, na.rm = TRUE) /
-  sum(!is.na(dat_clean_aug_long$expression)) * 100
-
-neg_perc
-```
-
-5,6% of expression values are negative
+5,6% of expression values are negative.
 
 #### Investigating the distribution of negative values
 
 ```{r}
-summary(dat_clean_aug_long$expression[
-  dat_clean_aug_long$expression < 0
+summary(dat_clean_long$expression[
+  dat_clean_long$expression < 0
 ])
 ```
 
@@ -230,15 +172,20 @@ summary(dat_clean_aug_long$expression[
 
 -   25% of negative values are between −6.09 and 0.
 
-#### VSN
-
-Why VSN?
+#### Applying VSN transformation
 
 Microarray expression measurements are known to potentially exhibit intensity-dependent measurement variability. Highly expressed genes often have greater absolute measurement variability than weakly expressed genes.
 
-The strongest justification for using variance-stabilizing normalization (VSN) in your project is that our original microarray expression data have a pronounced mean–variance dependence, contain negative values and appear to be on an unlogged intensity scale.
+The strongest justification for using variance-stabilizing normalization (VSN) in our project is that our original microarray expression data have a pronounced mean–variance dependence, contain negative values and appear to be on an unlogged intensity scale.
 
 VSN is specifically developed for microarray expression data that exhibit mean–variance dependence. It is an established statistical method designed to address the relationship between expression intensity and measurement variability.
+
+```{r}
+dat_clean_aug <- dat_clean |>
+ select(-gene_id)
+```
+
+Getting rid of gene id, since we are going to investigate the probes.
 
 ```{r}
 # Extract only numerical expression columns
@@ -265,6 +212,21 @@ dat_clean_aug_vsn <- bind_cols(
 
 Our expression data have already been processed using dChip. Therefore, we disabled additional sample-specific calibration.
 
+```{r}
+# Range and quantiles
+quantile(expr, c(0, 0.01, 0.25, 0.5, 0.75, 0.99, 1),
+         na.rm = TRUE)
+
+# Proportion of negative values
+mean(expr < 0, na.rm = TRUE)
+
+# Probe-specific means
+summary(rowMeans(expr, na.rm = TRUE))
+
+# Probe-specific standard deviations
+summary(apply(expr, 1, sd, na.rm = TRUE))
+```
+
 #### Comparing original expressions with the transformed expressions
 
 Used code: meanSdPlot(expr_vsn, plot = FALSE)
@@ -272,15 +234,15 @@ Used code: meanSdPlot(expr_vsn, plot = FALSE)
 A function from the vsn package that investigates the relationship between mean expression and standard deviation.
 
 ```{r}
-p1 <- meanSdPlot(expr, plot = FALSE)$gg +
+p2 <- meanSdPlot(expr, plot = FALSE)$gg +
   ggtitle("Before VSN") +
   theme(legend.position = "bottom")
 
-p2 <- meanSdPlot(expr_vsn, plot = FALSE)$gg +
+p3 <- meanSdPlot(expr_vsn, plot = FALSE)$gg +
   ggtitle("After VSN") +
   theme(legend.position = "bottom")
 
-grid.arrange(p1, p2, ncol = 2)
+grid.arrange(p2, p3, ncol = 2)
 
 ```
 
@@ -300,8 +262,6 @@ VSN has achived:
 
 -   Produced a more appropriate expression scale for differential expression analysis.
 
-### Progressing with the VSN transformed dataset
-
 ```{r}
 # Before VSN
 boxplot(expr,
@@ -320,7 +280,10 @@ boxplot(expr_vsn,
         main = "After VSN",
         ylab = "Transformed expression",
         col = "lightgreen")
+
 ```
+
+There are no glaring sample-level outliers for the original expression values.
 
 #### Creating the long format of vsn expressions
 
@@ -334,7 +297,7 @@ dat_clean_aug_vsn_long <- pivot_longer(data = dat_clean_aug_vsn ,
 Distribution of expressions
 
 ```{r}
-p2 <- ggplot(dat_clean_aug_vsn_long,aes(x=expression))+
+p4 <- ggplot(dat_clean_aug_vsn_long,aes(x=expression))+
   geom_histogram(bins = 50) +
   theme_minimal() +
   labs(
@@ -342,7 +305,7 @@ p2 <- ggplot(dat_clean_aug_vsn_long,aes(x=expression))+
     x = "Expression",
     y = "Frequency"
   )
-p2
+p4
 ```
 
 The VSN-transformed expression distribution is:
@@ -359,30 +322,60 @@ The VSN-transformed expression distribution is:
 
 The VSN-transformed expression data are more suitable for linear modelling primarily because the transformation reduces mean-dependent variability, rather than simply making the distribution more normally distributed.
 
-Adding the state column
+#### Adding the state column
+
+```{r}
+glimpse(metadata_aug)
+count(metadata_aug, tissue_group)
+```
 
 ```{r}
 dat_clean_aug_vsn_long <- dat_clean_aug_vsn_long |>
-  mutate(state = case_when(
-    metadata_aug$tissue_group[match(sample, metadata_aug$sample_id)] == "Tumour" ~ 1,
-    metadata_aug$tissue_group[match(sample, metadata_aug$sample_id)] == "Normal breast" ~ 0
-  ))
+  left_join(
+    metadata_aug |> select(sample_id, tissue_group),
+    by = c("sample" = "sample_id")
+  )
+```
+
+```{r}
+# See all tissue_group values (including NA for unmatched samples)
+count(dat_clean_aug_vsn_long, tissue_group)
+
+# Inspect any rows where tissue_group is NA or not one of your two main groups
+dat_clean_aug_vsn_long |>
+  filter(is.na(tissue_group) | !tissue_group %in% c("Tumour", "Normal breast")) |>
+  distinct(sample, tissue_group)
+```
+
+```{r}
+dat_clean_aug_vsn_long <- dat_clean_aug_vsn_long |>
+  filter(tissue_group %in% c("Tumour", "Normal breast")) |>
+  mutate(
+    state = case_when(
+      tissue_group == "Tumour" ~ 1,
+      tissue_group == "Normal breast" ~ 0
+    ))
+```
+
+```{r}
+sum(is.na(dat_clean_aug_vsn_long$state))
 ```
 
 We don't need the sample
 
 ```{r}
 dat_clean_aug_vsn_long <- dat_clean_aug_vsn_long |>
-                          select(-sample)
+                         select(-sample)
 ```
 
-#### Group by gene
+#### Nest, and group by probe
 
 Creating a dplyr pipeline, using the group_by() function to group dat_clean_aug_long dataset by gene and then adding the nest() to the pipeline.
 
 ```{r}
 dat_clean_aug_vsn_long_nested <- dat_clean_aug_vsn_long |>
-  dplyr::group_by(gene_id) |>
+  dplyr::filter(!is.na(probe_id)) |>
+  dplyr::group_by(probe_id) |>
   tidyr::nest()
 ```
 
@@ -424,7 +417,7 @@ Keeping only the 5 columns that we need.
 ```{r}
 dat_estimates <- dat_estimates |>
   filter(term == "state") |>
-  select(gene_id, p.value, estimate, conf.low, conf.high) |>
+  select(probe_id, p.value, estimate, conf.low, conf.high) |>
   ungroup()
 ```
 
@@ -434,39 +427,14 @@ dat_estimates
 
 #### Examine significance
 
-We check whether a gene is significantly differentially expressed between the two conditions.
-
-```{r}
-dat_estimates <- dat_estimates |>
-  mutate(
-    q.value = p.adjust(p.value),
-    significant = q.value < 0.05
-  )
-```
-
-```{r}
-dat_estimates
-```
-
-```{r}
-dat_estimates <- dat_estimates |>
-  mutate(
-    q.value = p.adjust(p.value),
-    is_significant = case_when(q.value <= 0.05 ~ "yes",
-                               q.value > 0.05 ~ "no")
-  )
-```
-
-```{r}
-dat_estimates
-```
+We check whether a gene is significantly differentially expressed between the two conditions
 
 ```{r}
 dat_estimates <- dat_estimates|>
   mutate(
     p_adj = p.adjust(p.value, method = "BH"),
     significant = p_adj < 0.05,
-    label = if_else(significant, gene_id, "")
+    label = if_else(significant, probe_id, "")
   )
 ```
 
@@ -510,110 +478,6 @@ dat_estimates |>
     not_significant = sum(p_adj >= 0.05, na.rm = TRUE)
   )
 ```
-
-## With shifting and log2() transformation
-
-### Shifting and log2() transforming the data
-
-```{r}
-shift <- 1 - min(dat_clean_aug_long$expression, na.rm = TRUE)
-
-dat_clean_aug_long_transformed <- dat_clean_aug_long |>
-  mutate(expression_log2 = log2(expression + shift))
-shift
-```
-
-#### Exclude the original expression
-
-```{r}
-dat_clean_aug_long_transformed <-dat_clean_aug_long_transformed|>
-  select(-expression)
-```
-
-#### Distribution of expressions - shifted, log2() transformed
-
-```{r}
-p2 <- ggplot(dat_clean_aug_long_transformed,aes(x=expression_log2))+
-  geom_histogram(bins = 50) +
-  theme_minimal() +
-  labs(
-    title = "Distribution of gene expression",
-    x = "shifted log2(expression)",
-    y = "Frequency"
-  )
-p2
-```
-
-### Group by gene
-
-```{r}
-dat_clean_aug_long_transformed_nested <- dat_clean_aug_long_transformed |>
-  dplyr::group_by(gene_id) |>
-  tidyr::nest()
-```
-
-## Model
-
-### Creating and tidying the model object
-
-```{r}
-dat_clean_aug_long_transformed_nested <- dat_clean_aug_long_transformed_nested |>
-  ungroup() |>
-  mutate(
-    model_object = map(
-      data,
-      ~lm(expression_log2 ~ state, data = .x)
-    ),
-    model_object_transformed_tidy = map(
-      model_object,
-      ~tidy(.x, conf.int = TRUE, conf.level = 0.95)
-    )
-  )
-```
-
-### Examine significance
-
-```{r}
-dat_transformed_estimates <- unnest(dat_clean_aug_long_transformed_nested, model_object_transformed_tidy)
-```
-
-```{r}
-dat_transformed_estimates <- dat_transformed_estimates |>
-  filter(term == "state") |>
-  select(gene_id, p.value, estimate, conf.low, conf.high) |>
-  ungroup()
-```
-
-### **Correcting for multiple testing**, using the **Bonferroni correction**
-
-```{r}
-dat_transformed_estimates <- dat_transformed_estimates|>
-  mutate(
-    p_adj = p.adjust(p.value, method = "bonferroni"),
-    significant = p_adj < 0.05,
-    label = if_else(significant, gene_id, "")
-  )
-```
-
-## Visualizing data
-
-```{r}
-
-ggplot(dat_transformed_estimates,
-       aes(x = estimate, y = -log10(p.value))) +
-  geom_point(
-    aes(color = significant),
-    alpha = 0.5
-  ) +
-  scale_color_manual(
-    values = c("FALSE" = "#F8766D",
-               "TRUE" = "#00BFC4")
-  ) +
-  theme_minimal() +
-  theme(legend.position = "none")
-```
-
-We got similar results as for the expression without shifting and transforming.
 
 ## Save output
 
