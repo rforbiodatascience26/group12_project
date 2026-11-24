@@ -6,22 +6,21 @@ Primary tumour-versus-normal differential-expression analysis.
 
 ## Input / Output
 
-+------------+-----------------------------------+
-|            | File                              |
-+============+===================================+
-| **Reads**  | `data/03_sample_metadata_aug.rds` |
-|            |                                   |
-|            | `data/02_dat_clean.tsv`           |
-+------------+-----------------------------------+
-| **Writes** | `05_key_plot_2.png`               |
-+------------+-----------------------------------+
++---------------+-----------------------------------+
+|               | File                              |
++===============+===================================+
+| **Reads**     | `data/03_sample_metadata_aug.rds` |
+|               |                                   |
+|               | `data/02_dat_clean.tsv`           |
++---------------+-----------------------------------+
+| **Writes**    | `05_key_plot_2.png`               |
++---------------+-----------------------------------+
 
 ## Setup
 
 ```{r}
 #| label: 05_setup
 #| message: false 
-library(tidyverse) 
 library(here) 
 source(here("R", "99_proj_func.R"))
 ```
@@ -35,7 +34,7 @@ source(here("R", "99_proj_func.R"))
  dat_clean <-read_tsv(here("data", "02_dat_clean.tsv"))
 ```
 
-## Loading libraries
+## Load libraries
 
 ```{r}
 library(tidyverse) 
@@ -69,23 +68,21 @@ length(unique(dat_clean$probe_id))
 length(na.omit(dat_clean$probe_id))
 ```
 
--   All missing values are within the gene_id-s.
+All 10,541 missing values (NA) in *dat_clean* occur in *gene_id*, with 0 missing values in *probe_id*. Across all 54,675 rows, *probe_ids* contains no duplicates (54,675 unique values).
 
--   Duplicate gene entries occur because microarray platforms such as the Affymetrix Human Genome U133 Plus 2.0 array (GPL570) measure expression at the probe-set level rather than as one entry per gene, allowing multiple probe sets—targeting different exons, transcript isoforms, or updated gene annotations—to map to the same gene. In `dat_clean`, this results in 44,134 non-missing `gene_id` rows corresponding to 21,879 unique genes.
-
--   There are no duplicates within the probes.
+Repeated gene entries arise because platforms such as the Affymetrix Human Genome U133 Plus 2.0 array (GPL570) assay expression at the probe-set level rather than one measurement per gene, allowing multiple probe sets-targeting different exons, transcript isoforms, or re-annotated transcripts-to map to the same gene. In *dat_clean*, the 44,134 non-missing gene_id entries correspond to 21,879 unique *gene_id* values.
 
 ## Analysis
 
 ### **Define the primary hypothesis**
 
-**Research question:** Does gene expression differ between tumour and normal breast tissue?
+**Research question:** Does expression of probes differ between tumour and normal breast tissue?
 
 ### Exploring data for differential gene expression analysis
 
 #### Creating the long augment data
 
-We need to create the long augment data so that have all the probes and genes defined in one column. Then we can visualize the distributions.
+We reshape `dat_clean` into long format so that all sample IDs (`GSM...`) sit in a single `sample` column and their measurements sit in a single `expression` column, while retaining `probe_id` and `gene_id` for each row. This makes it easy to visualize expression distributions across samples.
 
 ```{r}
 dat_clean_long <- pivot_longer(data = dat_clean ,
@@ -93,10 +90,6 @@ dat_clean_long <- pivot_longer(data = dat_clean ,
                                        names_to = "sample", 
                                        values_to = "expression")
 ```
-
-There are a lot of genes with low expression, and there are negative values as well.
-
-#### Adding the state column
 
 #### Distribution of expressions
 
@@ -112,6 +105,8 @@ p1 <- ggplot(dat_clean_long,aes(x=expression))+
 p1
 ```
 
+The original expression data is heavily right-skewed on the linear scale, with most measurements concentrated near zero and a long right tail. We cannot apply a log2() transformation, hence to negative values.
+
 #### Check for outliers using boxplot
 
 ```{r}
@@ -120,7 +115,10 @@ ggplot(dat_clean_long, aes(y = expression)) +
   theme_minimal() +
   labs(title = "Boxplot of gene expression",
        y = "Expression")
+
 ```
+
+The boxplot of raw expression values shows the median and interquartile range compressed near zero due to extreme right-skewness, with extensive high-intensity outliers reaching above 40,000 and some negative values below zero.
 
 ```{r}
 # 1. See the highest expression values and which probe + sample they belong to
@@ -137,7 +135,9 @@ dat_clean_long |>
   )
 ```
 
-Although the exploratory boxplot of raw expression intensities shows an extreme observation around 40,000, this point represents a single probe measurement within one sample rather than an outlying array. Because high expression values in microarray data often reflect genuine biological signal-and sample-wise boxplots confirmed consistent overall distributions across all 62 arrays-this observation was retained rather than arbitrarily filtered out.
+To investigate the extreme upper outliers seen in the boxplot, we inspected the top 10 expression values and counted observations exceeding 20,000, 30,000, and 40,000. The highest single value (`41,916.43`, probe `217161_x_at` in `GSM194407`) stands well above the remaining top entries.
+
+We chose not to exclude the highest observation (`41,916.43` for probe `217161_x_at` in sample `GSM194407`) solely because it appears as an extreme value on the unlogged scale. High intensities can reflect genuine biological expression or probe characteristics, and extreme upper values are naturally compressed and variance-stabilized during downstream normalization.
 
 #### Investigate extreme low expression values
 
@@ -147,6 +147,8 @@ dat_clean_long |>
   arrange(expression) |>
   head(10)
 ```
+
+Inspecting the lowest values in the dChip-normalized dataset revealed large negative intensities down to `-5,899.13` (frequently involving probe `214456_x_at` across multiple samples), which rules out that the data is already `log2()`-transformed and means we cannot apply a plain `log2()` transformation directly.
 
 #### How frequent are the negative values
 
@@ -161,7 +163,7 @@ dat_clean_long |>
   )
 ```
 
-5,6% of expression values are negative.
+Across 2,733,750 total long-format expression entries, 152,899 (5.59%) are negative, 13 are zero, and 2,580,838 are positive, confirming that non-positive values are a substantial minority rather than rare edge cases
 
 #### Investigating the distribution of negative values
 
@@ -169,6 +171,7 @@ dat_clean_long |>
 summary(dat_clean_long$expression[
   dat_clean_long$expression < 0
 ])
+
 ```
 
 -   75% of negative values are between −55.04 and 0.
@@ -177,11 +180,11 @@ summary(dat_clean_long$expression[
 
 -   25% of negative values are between −6.09 and 0.
 
-#### Applying VSN transformation
+### Applying VSN transformation
 
-Microarray expression measurements are known to potentially exhibit intensity-dependent measurement variability. Highly expressed genes often have greater absolute measurement variability than weakly expressed genes.
+Based on our exploratory findings-strong right-skewness on a linear scale, upper intensities up to 41,916.43, and 152,899 (5.59%) negative plus 13 zero values (mostly modest negatives around a median of -19.00, down to -5,899.13)-we chose VSN over a direct log2() transformation or ad-hoc filtering/offsetting because it handles negative and zero values naturally, compresses extreme high values, and stabilizes variance while retaining potentially informative measurements.
 
-The strongest justification for using variance-stabilizing normalization (VSN) in our project is that our original microarray expression data have a pronounced mean–variance dependence, contain negative values and appear to be on an unlogged intensity scale.
+Furthermore, microarray expression measurements are known to potentially exhibit intensity-dependent measurement variability. Highly expressed genes often have greater absolute measurement variability than weakly expressed genes.
 
 VSN is specifically developed for microarray expression data that exhibit mean–variance dependence. It is an established statistical method designed to address the relationship between expression intensity and measurement variability.
 
@@ -215,22 +218,9 @@ dat_clean_aug_vsn <- bind_cols(
 )
 ```
 
-Our expression data have already been processed using dChip. Therefore, we disabled additional sample-specific calibration.
+We extracted the `GSM*` sample columns from `dat_clean_aug` into a numeric matrix, checked its dimensions and overall value range, fitted variance stabilizing normalization using `vsn2(..., calib = "none")` (appropriate given prior dChip normalization), applied the transformation via `predict()`, and reattached the non-sample columns to create `dat_clean_aug_vsn`.
 
-```{r}
-# Range and quantiles
-quantile(expr, c(0, 0.01, 0.25, 0.5, 0.75, 0.99, 1),
-         na.rm = TRUE)
-
-# Proportion of negative values
-mean(expr < 0, na.rm = TRUE)
-
-# Probe-specific means
-summary(rowMeans(expr, na.rm = TRUE))
-
-# Probe-specific standard deviations
-summary(apply(expr, 1, sd, na.rm = TRUE))
-```
+Variance stabilizing normalization (VSN) applies a generalized log-like transformation that stabilizes variance across expression levels, compresses high intensities similarly to a log scale, and remains well-defined across zero and negative values; fitting `vsn2(..., calib = "none")` transformed the expression matrix without adding extra sample-specific calibration on top of the existing dChip normalization.
 
 #### Comparing original expressions with the transformed expressions
 
@@ -263,7 +253,7 @@ VSN has achived:
 
 -   Retained the negative expression observations.
 
--   Avoided the need for an arbitrary pseudocount or large constant shift.
+-   Avoided the need for a large constant shift.
 
 -   Produced a more appropriate expression scale for differential expression analysis.
 
@@ -313,17 +303,29 @@ p4 <- ggplot(dat_clean_aug_vsn_long,aes(x=expression))+
 p4
 ```
 
+```{r}
+p4 <- ggplot(dat_clean_aug_vsn_long,aes(x=expression))+
+  geom_histogram(bins = 50) +
+  theme_minimal() +
+  labs(
+    title = "Distribution of VSN-transformed gene expression",
+    x = "Expression",
+    y = "Frequency"
+  )
+p4
+```
+
 The VSN-transformed expression distribution is:
 
 -   Unimodal: There is one dominant peak around an expression value of 5.
 
 -   Approximately bell-shaped: The distribution is considerably more symmetric than before transformation.
 
--   Slightly right-skewed: A longer right tail is still present, but this is not necessarily problematic.
+-   Slightly right-skewed: A longer right tail is still present.
 
 -   Compressed: The extremely large original expression values are now represented on a much smaller scale.
 
--   Still containing negative values: This is expected and perfectly acceptable for linear modelling.
+-   Still containing negative values
 
 The VSN-transformed expression data are more suitable for linear modelling primarily because the transformation reduces mean-dependent variability, rather than simply making the distribution more normally distributed.
 
@@ -375,7 +377,7 @@ dat_clean_aug_vsn_long <- dat_clean_aug_vsn_long |>
 
 #### Nest, and group by probe
 
-Creating a dplyr pipeline, using the group_by() function to group dat_clean_aug_long dataset by gene and then adding the nest() to the pipeline.
+Creating a dplyr pipeline, using the group_by() function to group dat_clean_aug_vsn_long dataset by probe and then adding the nest() to the pipeline.
 
 ```{r}
 dat_clean_aug_vsn_long_nested <- dat_clean_aug_vsn_long |>
@@ -388,7 +390,7 @@ dat_clean_aug_vsn_long_nested <- dat_clean_aug_vsn_long |>
 
 #### Creating and tidying the model object
 
-Using the map()-function, adding a new line to the pipeline, where we add a new variable model_object to the dat_clean_aug_long_nested dataset, which R will compute per gene.
+Using the map()-function, adding a new line to the pipeline, where we add a new variable model_object to the dat_clean_aug_vsn_long_nested dataset, which R will compute per probe.
 
 ### Creating the model object then the tidy model object
 
@@ -446,26 +448,24 @@ dat_estimates <- dat_estimates|>
 ### Visualizing data
 
 ```{r}
-ggplot(dat_estimates,
-       aes(x = estimate, y = -log10(p_adj))) +
-  geom_point(
-    aes(color = significant),
-    alpha = 0.5
-  ) +
-  labs(
-  title = "Volcano plot of VSN-transformed expression",
-  x = "Estimated difference in VSN-transformed expression",
-  y = "-log10(adjusted p-value)"
-  )+
-  scale_color_manual(
-    values = c("FALSE" = "#F8766D",
-               "TRUE" = "#00BFC4")
-  ) +
-  theme_minimal() +
-  theme(legend.position = "none")
+volcano_plot <- ggplot(dat_estimates,
+           aes(x = estimate, y = -log10(p_adj))) +
+           geom_point(
+           aes(color = significant),
+          alpha = 0.5
+         ) +
+         labs(
+         title = "Volcano plot of VSN-transformed expression",
+         x = "Estimated difference in VSN-transformed expression",
+        y = "-log10(adjusted p-value)"
+        )+
+        scale_color_manual(
+        values = c("FALSE" = "#F8766D",
+                    "TRUE" = "#00BFC4")
+        ) +
+      theme_minimal() +
+      theme(legend.position = "none")
 ```
-
--   estimate = tumour expression - healthy expression
 
 The volcano plot of VSN-transformed expression values revealed statistically significant differential expression in both directions following multiple testing correction. An asymmetric distribution was observed, with a greater apparent concentration of highly significant probe sets exhibiting negative estimated expression differences. This suggests that lower expression in the comparison group may be more prevalent among the differentially expressed probe sets.
 
