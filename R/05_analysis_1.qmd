@@ -37,6 +37,21 @@ source(here("R", "99_proj_func.R"))
 # TODO: dimensions, column types, missing values, sample IDs
 ```
 
+```{r}
+sum(is.na(dat_clean))
+```
+
+```{r}
+dat_clean |>
+  count(gene_id, sort = TRUE) |>
+  filter(n > 1)
+```
+
+```{r}
+dat_clean_aug_vsn_long |>
+  count(gene_id, sort = TRUE)
+```
+
 ## Analysis
 
 ## Exploring data for differential gene expression analysis
