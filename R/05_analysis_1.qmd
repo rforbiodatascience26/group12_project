@@ -39,6 +39,30 @@ source(here("R", "99_proj_func.R"))
 
 ## Analysis
 
+## Exploring data for differential gene expression analysis
+
+```{r}
+# Overall distribution
+
+
+
+```
+
+```{r}
+# Range and quantiles
+quantile(expr, c(0, 0.01, 0.25, 0.5, 0.75, 0.99, 1),
+         na.rm = TRUE)
+
+# Proportion of negative values
+mean(expr < 0, na.rm = TRUE)
+
+# Probe-specific means
+summary(rowMeans(expr, na.rm = TRUE))
+
+# Probe-specific standard deviations
+summary(apply(expr, 1, sd, na.rm = TRUE))
+```
+
 ## **Define the primary hypothesis**
 
 **Research question:** Does gene expression differ between tumour and normal breast tissue?
@@ -51,6 +75,7 @@ library(broom)
 library(tidyr)
 library(ggplot2)
 library(ggrepel)
+library(dplyr)
 ```
 
 ## Without shifting
@@ -73,20 +98,6 @@ dat_clean_aug_long <- pivot_longer(data = dat_clean_aug ,
                                        cols = starts_with("GSM"),
                                        names_to = "sample", 
                                        values_to = "expression")
-```
-
-#### Distribution of expressions
-
-```{r}
-p1 <- ggplot(dat_clean_aug_long,aes(x=expression))+
-  geom_histogram(bins = 50) +
-  theme_minimal() +
-  labs(
-    title = "Distribution of gene expression",
-    x = "Expression",
-    y = "Frequency"
-  )
-p1
 ```
 
 There are a lot of genes with low expression
@@ -129,6 +140,89 @@ dat_clean_aug_long <- dat_clean_aug_long |>
 ```{r}
 glimpse(dat_clean_aug_long)
 ```
+
+#### Distribution of expressions
+
+```{r}
+p1 <- ggplot(dat_clean_aug_long,aes(x=expression))+
+  geom_histogram(bins = 50) +
+  theme_minimal() +
+  labs(
+    title = "Distribution of gene expression",
+    x = "Expression",
+    y = "Frequency"
+  )
+p1
+```
+
+#### Check for outliers using boxplot
+
+```{r}
+ggplot(dat_clean_aug_long, aes(y = expression)) +
+  geom_boxplot() +
+  theme_minimal() +
+  labs(title = "Boxplot of gene expression",
+       y = "Expression")
+```
+
+#### Investigate extreme expression values
+
+```{r}
+# 20 highest expression values
+dat_clean_aug_long |>
+  arrange(desc(expression)) |>
+  head(20)
+
+```
+
+```{r}
+# 20 lowest expression values
+dat_clean_aug_long |>
+  arrange(expression) |>
+  head(20)
+```
+
+The negative expression values are not just small deviations around zero.
+
+#### How frequent are the negative values
+
+```{r}
+dat_clean_aug_long |>
+  summarise(
+    total = n(),
+    negative = sum(expression < 0, na.rm = TRUE),
+    zero = sum(expression == 0, na.rm = TRUE),
+    positive = sum(expression > 0, na.rm = TRUE),
+    percent_negative = mean(expression < 0, na.rm = TRUE) * 100
+  )
+```
+
+#### Percentage of negative values
+
+```{r}
+neg_perc <- sum(dat_clean_aug_long$expression < 0, na.rm = TRUE) /
+  sum(!is.na(dat_clean_aug_long$expression)) * 100
+
+neg_perc
+```
+
+5,6% of expression values are negative
+
+#### Investigating the distribution of negative values
+
+```{r}
+summary(dat_clean_aug_long$expression[
+  dat_clean_aug_long$expression < 0
+])
+```
+
+-   75% of negative values are between −55.04 and 0.
+
+-   50% of negative values are between −19.00 and 0.
+
+-   25% of negative values are between −6.09 and 0.
+
+How common the extreme negative values are
 
 #### Group by gene
 
