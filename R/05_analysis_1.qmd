@@ -6,10 +6,15 @@ Primary tumour-versus-normal differential-expression analysis.
 
 ## Input / Output
 
-|            | File                  |
-|------------|-----------------------|
-| **Reads**  | `data/03_dat_aug.tsv` |
-| **Writes** | `05_key_plot_2.png`   |
++------------+-----------------------------------+
+|            | File                              |
++============+===================================+
+| **Reads**  | `data/03_sample_metadata_aug.rds` |
+|            |                                   |
+|            | `data/02_dat_clean.tsv`           |
++------------+-----------------------------------+
+| **Writes** | `05_key_plot_2.png`               |
++------------+-----------------------------------+
 
 ## Setup
 
@@ -484,6 +489,15 @@ dat_estimates |>
 ```{r}
 #| label: 05_save 
 # TODO: create the plot
+dir.create(here("results"), showWarnings = FALSE, recursive = TRUE)
+
+ggsave(
+  filename = here("results", "05_key_plot_2.png"),
+  plot = volcano_plot,
+  width = 7,
+  height = 5,
+  dpi = 300
+)
 ```
 
 ## 
