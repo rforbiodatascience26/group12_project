@@ -6,15 +6,15 @@ Primary tumour-versus-normal differential-expression analysis.
 
 ## Input / Output
 
-+---------------+-----------------------------------+
-|               | File                              |
-+===============+===================================+
-| **Reads**     | `data/03_sample_metadata_aug.rds` |
-|               |                                   |
-|               | `data/02_dat_clean.tsv`           |
-+---------------+-----------------------------------+
-| **Writes**    | `05_key_plot_2.png`               |
-+---------------+-----------------------------------+
++--------------+-----------------------------------+
+|              | File                              |
++==============+===================================+
+| **Reads**    | `data/03_sample_metadata_aug.rds` |
+|              |                                   |
+|              | `data/02_dat_clean.tsv`           |
++--------------+-----------------------------------+
+| **Writes**   | `05_key_plot_2.png`               |
++--------------+-----------------------------------+
 
 ## Setup
 
@@ -22,7 +22,16 @@ Primary tumour-versus-normal differential-expression analysis.
 #| label: 05_setup
 #| message: false 
 library(here) 
-source(here("R", "99_proj_func.R"))
+#Load libraries
+library(tidyverse) 
+library(broom) 
+library(tidyr) 
+library(ggplot2) 
+library(ggrepel) 
+library(dplyr) 
+library(vsn) 
+library(gridExtra)
+
 ```
 
 ## Load data
@@ -32,19 +41,6 @@ source(here("R", "99_proj_func.R"))
 # TODO: replace with the real loading code 
  metadata_aug<- read_rds(here("data", "03_sample_metadata_aug.rds"))
  dat_clean <-read_tsv(here("data", "02_dat_clean.tsv"))
-```
-
-## Load libraries
-
-```{r}
-library(tidyverse) 
-library(broom) 
-library(tidyr) 
-library(ggplot2) 
-library(ggrepel) 
-library(dplyr) 
-library(vsn) 
-library(gridExtra)
 ```
 
 ## Initial checks
@@ -89,6 +85,12 @@ dat_clean_long <- pivot_longer(data = dat_clean ,
                                        cols = starts_with("GSM"),
                                        names_to = "sample", 
                                        values_to = "expression")
+```
+
+Checking whether all expression values are numeric and finite.
+
+```{r}
+all(is.numeric(dat_clean_long$expression) & is.finite(dat_clean_long$expression))
 ```
 
 #### Distribution of expressions
@@ -216,6 +218,12 @@ dat_clean_aug_vsn <- bind_cols(
   dat_clean_aug |> select(-starts_with("GSM")),
   as.data.frame(expr_vsn)
 )
+```
+
+Checking whether the probe order stays the same after transformation.
+
+```{r}
+identical(dat_clean_aug$probe_id, dat_clean_aug_vsn$probe_id)
 ```
 
 We extracted the `GSM*` sample columns from `dat_clean_aug` into a numeric matrix, checked its dimensions and overall value range, fitted variance stabilizing normalization using `vsn2(..., calib = "none")` (appropriate given prior dChip normalization), applied the transformation via `predict()`, and reattached the non-sample columns to create `dat_clean_aug_vsn`.
@@ -434,7 +442,7 @@ dat_estimates
 
 #### Examine significance
 
-We check whether a gene is significantly differentially expressed between the two conditions
+We check whether a probe is significantly differentially expressed between the two conditions
 
 ```{r}
 dat_estimates <- dat_estimates|>
