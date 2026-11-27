@@ -1,6 +1,7 @@
 ---
-title: "Presentation"
-format: revealjs
+format:
+  revealjs: 
+    theme: serif
 ---
 
 ## Slide 1
