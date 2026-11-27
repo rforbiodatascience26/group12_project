@@ -6,15 +6,15 @@ Primary tumour-versus-normal differential-expression analysis.
 
 ## Input / Output
 
-+--------------+-----------------------------------+
-|              | File                              |
-+==============+===================================+
-| **Reads**    | `data/03_sample_metadata_aug.rds` |
-|              |                                   |
-|              | `data/02_dat_clean.tsv`           |
-+--------------+-----------------------------------+
-| **Writes**   | `05_key_plot_2.png`               |
-+--------------+-----------------------------------+
++---------------+-----------------------------------+
+|               | File                              |
++===============+===================================+
+| **Reads**     | `data/03_sample_metadata_aug.rds` |
+|               |                                   |
+|               | `data/02_dat_clean.tsv`           |
++---------------+-----------------------------------+
+| **Writes**    | `05_key_plot_2.png`               |
++---------------+-----------------------------------+
 
 ## Setup
 
@@ -224,6 +224,10 @@ Checking whether the probe order stays the same after transformation.
 
 ```{r}
 identical(dat_clean_aug$probe_id, dat_clean_aug_vsn$probe_id)
+```
+
+```{r}
+identical(dim(dat_clean_aug), dim(dat_clean_aug_vsn))
 ```
 
 We extracted the `GSM*` sample columns from `dat_clean_aug` into a numeric matrix, checked its dimensions and overall value range, fitted variance stabilizing normalization using `vsn2(..., calib = "none")` (appropriate given prior dChip normalization), applied the transformation via `predict()`, and reattached the non-sample columns to create `dat_clean_aug_vsn`.
