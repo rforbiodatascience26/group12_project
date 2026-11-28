@@ -6,15 +6,17 @@ Primary tumour-versus-normal differential-expression analysis.
 
 ## Input / Output
 
-+--------------+-----------------------------------+
-|              | File                              |
-+==============+===================================+
-| **Reads**    | `data/03_sample_metadata_aug.rds` |
-|              |                                   |
-|              | `data/02_dat_clean.tsv`           |
-+--------------+-----------------------------------+
-| **Writes**   | `05_key_plot_2.png`               |
-+--------------+-----------------------------------+
++---------------+-----------------------------------+
+|               | File                              |
++===============+===================================+
+| **Reads**     | `data/03_sample_metadata_aug.rds` |
+|               |                                   |
+|               | `data/02_dat_clean.tsv`           |
++---------------+-----------------------------------+
+| **Writes**    | `05_key_plot_1.png`               |
+|               |                                   |
+|               | `05_key_plot_2.png`               |
++---------------+-----------------------------------+
 
 ## Setup
 
@@ -249,7 +251,7 @@ p3 <- meanSdPlot(expr_vsn, plot = FALSE)$gg +
   ggtitle("After VSN") +
   theme(legend.position = "bottom")
 
-grid.arrange(p2, p3, ncol = 2)
+mean_sd_plot <- grid.arrange(p2, p3, ncol = 2)
 
 ```
 
@@ -502,6 +504,14 @@ dat_estimates |>
 #| label: 05_save 
 # TODO: create the plot
 dir.create(here("results/figures"), showWarnings = FALSE, recursive = TRUE)
+
+ggsave(
+  filename = here("results/figures", "05_key_plot_1.png"),
+  plot = mean_sd_plot,
+  width = 7,
+  height = 5,
+  dpi = 300
+)
 
 ggsave(
   filename = here("results/figures", "05_key_plot_2.png"),
