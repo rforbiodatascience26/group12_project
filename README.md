@@ -2,7 +2,7 @@
 
 | Name                    | Student ID | GitHub username |
 |-------------------------|------------|-----------------|
-| Ricsi (Member 1)        | <s263490>  | <s263490>      |
+| Ricsi (Member 1)        | s263490  | s263490      |
 | Daniel (Member 2)       | <sXXXXXX>  | <username>      |
 | Konstantinos (Member 3) | s263498    | DizzyForest     |
 | Sasa (Member 4)         | s263479    | b-sasa          |
