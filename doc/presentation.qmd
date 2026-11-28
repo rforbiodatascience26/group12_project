@@ -23,15 +23,13 @@ format:
 
 ## Slide 7
 
-
 ## Differential expression analysis - Linear models
 
 ::::: columns
 ::: {.column width="50%"}
-
-- dChip-normalized data
-- Not log2() scaled
-- Mean–variance dependence
+-   dChip-normalized data
+-   Not log2() scaled
+-   Mean–variance dependence
 
 VSN-transformation
 
@@ -69,7 +67,6 @@ dat_clean_aug_vsn_long_nested <- dat_clean_aug_vsn_long |>
   dplyr::group_by(probe_id) |>
   tidyr::nest()
 ```
-
 :::
 
 ::: {.column width="50%"}
