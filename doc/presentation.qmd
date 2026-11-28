@@ -22,10 +22,8 @@ format:
 
 ##Differential expression analysis - Linear models
 
-:::: {.columns}
-
-::: {.column width="40%"}
-
+::::: columns
+::: {.column width="50%"}
 -   dChip-normalized data
 
 -   not log2() scaled
@@ -35,19 +33,27 @@ format:
 VSN-transformation
 
 ```{r}
-p2 <- meanSdPlot(expr, plot = FALSE)$gg +
-  ggtitle("Before VSN") +
-  theme(legend.position = "bottom")
+# Extract only numerical expression columns
+expr <- dat_clean_aug |>
+  select(starts_with("GSM")) |>
+  as.matrix()
+# Fit VSN without additional sample-specific calibration
+vsn_fit <- vsn2(expr, calib = "none")
 
-p3 <- meanSdPlot(expr_vsn, plot = FALSE)$gg +
-  ggtitle("After VSN") +
-  theme(legend.position = "bottom")
+# Transform expression values
+expr_vsn <- predict(vsn_fit, newdata = expr)
 
-grid.arrange(p2, p3, ncol = 2)
+# Reconstruct the wide-format dataset
+dat_clean_aug_vsn <- bind_cols(
+  dat_clean_aug |> select(-starts_with("GSM")),
+  as.data.frame(expr_vsn)
+)
 ```
 
-::: {.column width="60%"}
+\![\](results/figures/05_key_plot_1.png){fig-alt="Relationship between mean expression and standard deviation" width="80%"}
+:::
 
+::: {.column width="50%"}
 Nest and group by probe
 
 ```{r}
@@ -94,9 +100,14 @@ volcano_plot <- ggplot(dat_estimates,
         ) +
       theme_minimal() +
       theme(legend.position = "none")
+
+
+
 ```
 
-\![\](results/figures/05_key_plot_2.png){fig-alt="Scatter plot showing negative correlation between tumor purity and GEP score" width="80%"}
+\![\](results/figures/05_key_plot_2.png){fig-alt="Volcano plot" width="80%"}
+:::
+:::::
 
 ## Slide 9
 
