@@ -6,15 +6,15 @@ Primary tumour-versus-normal differential-expression analysis.
 
 ## Input / Output
 
-+---------------+-----------------------------------+
-|               | File                              |
-+===============+===================================+
-| **Reads**     | `data/03_sample_metadata_aug.rds` |
-|               |                                   |
-|               | `data/02_dat_clean.tsv`           |
-+---------------+-----------------------------------+
-| **Writes**    | `05_key_plot_2.png`               |
-+---------------+-----------------------------------+
++--------------+-----------------------------------+
+|              | File                              |
++==============+===================================+
+| **Reads**    | `data/03_sample_metadata_aug.rds` |
+|              |                                   |
+|              | `data/02_dat_clean.tsv`           |
++--------------+-----------------------------------+
+| **Writes**   | `05_key_plot_2.png`               |
++--------------+-----------------------------------+
 
 ## Setup
 
@@ -184,7 +184,7 @@ summary(dat_clean_long$expression[
 
 ### Applying VSN transformation
 
-Based on our exploratory findings-strong right-skewness on a linear scale, upper intensities up to 41,916.43, and 152,899 (5.59%) negative plus 13 zero values (mostly modest negatives around a median of -19.00, down to -5,899.13)-we chose VSN over a direct log2() transformation or ad-hoc filtering/offsetting because it handles negative and zero values naturally, compresses extreme high values, and stabilizes variance while retaining potentially informative measurements.
+Based on our exploratory findings-strong right-skewness on a linear scale, upper intensities up to 41,916.43, and 152,899 (5.59%) negative plus 13 zero values (mostly modest negatives around a median of -19.00, down to -5,899.13)we chose VSN over a direct log2() transformation or ad-hoc filtering/offsetting because it handles negative and zero values naturally, compresses extreme high values, and stabilizes variance while retaining potentially informative measurements.
 
 Furthermore, microarray expression measurements are known to potentially exhibit intensity-dependent measurement variability. Highly expressed genes often have greater absolute measurement variability than weakly expressed genes.
 
@@ -501,10 +501,10 @@ dat_estimates |>
 ```{r}
 #| label: 05_save 
 # TODO: create the plot
-dir.create(here("results"), showWarnings = FALSE, recursive = TRUE)
+dir.create(here("results/figures"), showWarnings = FALSE, recursive = TRUE)
 
 ggsave(
-  filename = here("results", "05_key_plot_2.png"),
+  filename = here("results/figures", "05_key_plot_2.png"),
   plot = volcano_plot,
   width = 7,
   height = 5,

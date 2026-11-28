@@ -20,6 +20,84 @@ format:
 
 ## Slide 8
 
+##Differential expression analysis - Linear models
+
+:::: {.columns}
+
+::: {.column width="40%"}
+
+-   dChip-normalized data
+
+-   not log2() scaled
+
+-   mean–variance dependence
+
+VSN-transformation
+
+```{r}
+p2 <- meanSdPlot(expr, plot = FALSE)$gg +
+  ggtitle("Before VSN") +
+  theme(legend.position = "bottom")
+
+p3 <- meanSdPlot(expr_vsn, plot = FALSE)$gg +
+  ggtitle("After VSN") +
+  theme(legend.position = "bottom")
+
+grid.arrange(p2, p3, ncol = 2)
+```
+
+::: {.column width="60%"}
+
+Nest and group by probe
+
+```{r}
+dat_clean_aug_vsn_long_nested <- dat_clean_aug_vsn_long |>
+  dplyr::filter(!is.na(probe_id)) |>
+  dplyr::group_by(probe_id) |>
+  tidyr::nest()
+```
+
+Creating the model object
+
+```{r}
+dat_clean_aug_vsn_long_nested <- dat_clean_aug_vsn_long_nested |>
+  ungroup() |>
+  mutate(
+    model_object = map(
+      data,
+      ~lm(expression ~ state, data = .x)
+    ),
+    model_object_tidy = map(
+      model_object,
+      ~tidy(.x, conf.int = TRUE, conf.level = 0.95)
+    )
+  )
+```
+
+Volcano plot
+
+```{r}
+volcano_plot <- ggplot(dat_estimates,
+           aes(x = estimate, y = -log10(p_adj))) +
+           geom_point(
+           aes(color = significant),
+          alpha = 0.5
+         ) +
+         labs(
+         title = "Volcano plot of VSN-transformed expression",
+         x = "Estimated difference in VSN-transformed expression",
+        y = "-log10(adjusted p-value)"
+        )+
+        scale_color_manual(
+        values = c("FALSE" = "#F8766D",
+                    "TRUE" = "#00BFC4")
+        ) +
+      theme_minimal() +
+      theme(legend.position = "none")
+```
+
+\![\](results/figures/05_key_plot_2.png){fig-alt="Scatter plot showing negative correlation between tumor purity and GEP score" width="80%"}
+
 ## Slide 9
 
 ## Slide 10
