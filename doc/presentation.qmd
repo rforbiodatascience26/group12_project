@@ -2,6 +2,11 @@
 format:
   revealjs: 
     theme: serif
+    width: 1280
+    height: 720
+    margin: 0.05
+    center: false
+    smaller: true
 ---
 
 ## Slide 1
@@ -18,21 +23,22 @@ format:
 
 ## Slide 7
 
-## Slide 8
 
-##Differential expression analysis - Linear models
+## Differential expression analysis - Linear models
 
 ::::: columns
 ::: {.column width="50%"}
--   dChip-normalized data
 
--   not log2() scaled
-
--   mean–variance dependence
+- dChip-normalized data
+- Not log2() scaled
+- Mean–variance dependence
 
 VSN-transformation
 
 ```{r}
+#| echo: true
+#| code-overflow: scroll
+#| code-block-height: 100px
 # Extract only numerical expression columns
 expr <- dat_clean_aug |>
   select(starts_with("GSM")) |>
@@ -51,21 +57,28 @@ dat_clean_aug_vsn <- bind_cols(
 ```
 
 \![\](results/figures/05_key_plot_1.png){fig-alt="Relationship between mean expression and standard deviation" width="80%"}
-:::
 
-::: {.column width="50%"}
 Nest and group by probe
 
 ```{r}
+#| echo: true
+#| code-overflow: scroll
+#| code-block-height: 80px
 dat_clean_aug_vsn_long_nested <- dat_clean_aug_vsn_long |>
   dplyr::filter(!is.na(probe_id)) |>
   dplyr::group_by(probe_id) |>
   tidyr::nest()
 ```
 
+:::
+
+::: {.column width="50%"}
 Creating the model object
 
 ```{r}
+#| echo: true
+#| code-overflow: scroll
+#| code-block-height: 100px
 dat_clean_aug_vsn_long_nested <- dat_clean_aug_vsn_long_nested |>
   ungroup() |>
   mutate(
@@ -83,6 +96,10 @@ dat_clean_aug_vsn_long_nested <- dat_clean_aug_vsn_long_nested |>
 Volcano plot
 
 ```{r}
+#| echo: true
+#| code-overflow: scroll
+#| code-block-height: 80px
+
 volcano_plot <- ggplot(dat_estimates,
            aes(x = estimate, y = -log10(p_adj))) +
            geom_point(
