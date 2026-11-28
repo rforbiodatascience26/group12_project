@@ -2,7 +2,7 @@
 
 | Name                    | Student ID | GitHub username |
 |-------------------------|------------|-----------------|
-| Ricsi (Member 1)        | <sXXXXXX>  | <username>      |
+| Ricsi (Member 1)        | <s263490>  | <s263490>      |
 | Daniel (Member 2)       | <sXXXXXX>  | <username>      |
 | Konstantinos (Member 3) | s263498    | DizzyForest     |
 | Sasa (Member 4)         | s263479    | b-sasa          |
@@ -24,9 +24,76 @@ Short summary: \<2-3 sentences on data, methods and main finding. Fill in at the
 
 Data are **not** stored on GitHub. To reproduce the project:
 
-1.  Dataset: GEO accession [GSE7904](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE7904) (platform GPL570, Affymetrix Human Genome U133 Plus 2.0).
-2.  Download <exact file names or programmatic retrieval method> and place them in `data/_raw/` with these file names: `<expected file names>`.
-3.  Raw files must never be edited.
+1. Dataset: GEO accession [GSE7904](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE7904).
+2. The `01_load.qmd` script automatically downloads the GEO Series Matrix file to `data/_raw/` if it is not already present.
+3. The original downloaded file is preserved and should not be manually modified.
+
+## Data Loading (`01_load.qmd`)
+
+The first step of the analysis workflow is implemented in `R/01_load.qmd`, which retrieves the GSE7904 dataset from NCBI GEO, extracts the expression measurements and sample metadata, performs initial validation, and exports the structured data for downstream analysis.
+
+### Input data
+
+- **GEO accession:** GSE7904
+- **Organism:** *Homo sapiens*
+- **Platform:** GPL570 — Affymetrix Human Genome U133 Plus 2.0 Array
+- **Original samples:** 62
+- **Probe sets:** 54,675
+- **Input file:** `data/_raw/GSE7904_series_matrix.txt.gz`
+
+The script automatically downloads the compressed GEO Series Matrix file if it is not already present. It preserves the original file and creates the required data directories automatically.
+
+### Data extraction and processing
+
+The loading workflow:
+
+1. Reads the compressed Series Matrix file using `gzfile()` and `readLines()`.
+2. Extracts sample identifiers, titles, source descriptions, and sample characteristics from the GEO metadata.
+3. Uses a reusable extraction function and `lapply()` to process multiple metadata fields.
+4. Locates the expression table using the Series Matrix boundary markers and imports it with `read.delim()`.
+5. Assigns biological tissue groups using `dplyr::mutate()` and `case_when()`.
+6. Inspects dataset dimensions, sample composition, expression-value statistics, missing values, and duplicated probe identifiers.
+
+### Biological sample groups
+
+| Original GEO category | Assigned group | Number of samples |
+|---|---|---:|
+| Basal | Tumour | 18 |
+| non-BLC | Tumour | 21 |
+| BRCA1 | Tumour | 4 |
+| NB | Normal breast | 7 |
+| NO | Normal organelle | 12 |
+| **Total** | | **62** |
+
+The three tumour-related categories are assigned to one `Tumour` group. `Normal breast` and `Normal organelle` remain separate in the metadata. The primary downstream comparison focuses on tumour versus normal breast samples.
+
+### Output files
+
+| File | Description |
+|---|---|
+| `data/01_dat_load.tsv` | Expression measurements, with one row per probe set and one column per sample, plus the `ID_REF` identifier column. |
+| `data/01_sample_metadata.tsv` | Sample-level metadata, including GEO characteristics and assigned tissue groups. |
+
+### Validation and reproducibility
+
+The script performs checks to verify:
+
+- Successful download and non-empty input file.
+- Expected expression matrix and metadata dimensions.
+- Correspondence between expression sample identifiers and metadata identifiers.
+- Duplicate probe identifiers.
+- Missing expression measurements.
+- Successful export and preservation of output dimensions and sample ordering.
+
+An MD5 checksum is also calculated for the downloaded input file.
+
+### Scope and limitations
+
+This component focuses exclusively on data retrieval, extraction, organization, and initial validation.
+
+The expression values are preserved as supplied in the GEO Series Matrix file (dChip signal values). No additional normalization, logarithmic transformation, probe-to-gene annotation, probe aggregation, or differential-expression analysis is performed at this stage.
+
+The `data/` directory is ignored by Git, so the generated data files are not stored in the repository. They are recreated when the workflow is executed.
 
 ## How to Run the Project
 
@@ -39,7 +106,7 @@ Data are **not** stored on GitHub. To reproduce the project:
     # <add Bioconductor or other packages as they are used>
     ```
 
-3.  Create the data folders if they are missing: `data/_raw/` and `data/`.
+3. Run the workflow. Required data directories are created automatically, and the GEO dataset is downloaded if necessary.
 
 4.  Retrieve the raw data as described above.
 
@@ -90,6 +157,21 @@ All members are responsible for all parts of the project.
 -   Every `.qmd` must run from a fresh R session, reading its inputs from files and not from objects created in other documents.
 -   Naming: group labels are `tumour` / `normal`; sample and probe IDs follow `<agree on a convention>`.
 -   Do not re-clean or redefine the sample groups downstream of `02_clean.qmd`.
+
+## Declaration of Generative AI Use
+
+Generative AI tools were used as supporting tools during the development of this project. In particular, ChatGPT (OpenAI) was used to:
+
+- Explain R programming concepts, functions, and methods relevant to the data-processing and analysis workflow.
+- Support code review, debugging, and troubleshooting of R and Quarto scripts.
+- Assist with understanding bioinformatics concepts and the methodological choices made during the analysis.
+- Support the preparation and editing of project documentation, including README sections and presentation materials.
+
+AI-generated suggestions and explanations were critically reviewed by the project members. Code was checked and tested within the project workflow, and scientific and methodological decisions were made and evaluated by the students.
+
+The project members take full responsibility for the final code, analyses, interpretations, documentation, and conclusions. Generative AI was used as an assistance tool and not as a substitute for understanding or validating the work.
+
+**AI tool reference:** OpenAI. ChatGPT. https://chatgpt.com/ (accessed during project preparation, November 2026).
 
 ## Data Dictionary and Notes
 

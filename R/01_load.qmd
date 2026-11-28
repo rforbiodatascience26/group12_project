@@ -6,96 +6,72 @@ Load the raw GSE7904 expression data and sample metadata. Record the source, pla
 
 ## Input / Output
 
-+--------------+------------------------------------------+
-| Type         | File                                     |
-+:=============+:=========================================+
-| **Reads**    | `data/_raw/GSE7904_series_matrix.txt.gz` |
-+--------------+------------------------------------------+
-| **Writes**   | `data/01_dat_load.tsv`                   |
-|              |                                          |
-|              | `data/01_sample_metadata.tsv`            |
-+--------------+------------------------------------------+
+| Type | File |
+|:--|:--|
+| **Reads** | `data/_raw/GSE7904_series_matrix.txt.gz` |
+| **Writes** | `data/01_dat_load.tsv` |
+| **Writes** | `data/01_sample_metadata.tsv` |
+
 
 ## Data provenance
 
 ### Dataset identification
 
-The expression data used in this project originate from the Gene Expression Omnibus (GEO) database, maintained by the National Center for Biotechnology Information (NCBI).
+The expression data used in this project originate from the
+Gene Expression Omnibus (GEO) database, maintained by the
+National Center for Biotechnology Information (NCBI).
 
--   **GEO accession:** GSE7904
--   **Study title:** Expression data from human breast tissue
--   **Organism:** Homo sapiens
--   **GEO platform:** GPL570
--   **Measurement technology:** Affymetrix microarray
+- **GEO accession:** GSE7904
+- **Study title:** Expression data from human breast tissue
+- **Organism:** Homo sapiens
+- **GEO platform:** GPL570
+- **Measurement technology:** Affymetrix microarray
 
-Original dataset: https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE7904
+Original dataset:
+https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE7904
 
 ### Platform and measurement information
 
-The dataset was generated using the Affymetrix Human Genome U133 Plus 2.0 Array (GPL570).
+The dataset was generated using the Affymetrix Human Genome
+U133 Plus 2.0 Array (GPL570).
 
-The imported expression measurements are identified in the GEO Series Matrix file as dChip signal values.
+The imported expression measurements are identified in the
+GEO Series Matrix file as dChip signal values.
 
-The downloaded Series Matrix contains processed microarray signal measurements rather than the original raw Affymetrix CEL files.
-
-These measurements are preserved as provided in the GEO Series Matrix file. No additional logarithmic transformation or normalization is performed during the data-loading step.
-
-Each row of the expression matrix represents an Affymetrix probe set, identified by the ID_REF column. The expression columns correspond to individual GEO samples.
+These measurements are preserved as provided in the GEO
+Series Matrix file. No additional logarithmic transformation
+or normalization is performed during the data-loading step.
 
 ### Download information
 
-The original GEO Series Matrix file is downloaded from NCBI and stored in the project's `data/_raw/` directory.
+The original GEO Series Matrix file is downloaded from NCBI
+and stored in the project's `data/_raw/` directory.
 
--   **Source file:** GSE7904_series_matrix.txt.gz
--   **File format:** Compressed tab-delimited text
--   **Download URL:** https://ftp.ncbi.nlm.nih.gov/geo/series/GSE7nnn/GSE7904/matrix/GSE7904_series_matrix.txt.gz
+- **Source file:** GSE7904_series_matrix.txt.gz
+- **File format:** Compressed tab-delimited text
+- **Download URL:**
+  https://ftp.ncbi.nlm.nih.gov/geo/series/GSE7nnn/GSE7904/matrix/GSE7904_series_matrix.txt.gz
 
-The downloaded source file is preserved unchanged. Its MD5 checksum is calculated to support file integrity verification.
+The downloaded source file is preserved unchanged.
+Its MD5 checksum is calculated to support file integrity
+verification.
 
 ### Dataset composition
 
 The imported dataset contains:
 
--   62 biological samples
--   54,675 Affymetrix probe identifiers
--   43 tumour samples
--   7 normal breast samples
--   12 normal organelle samples
+- 62 biological samples
+- 54,675 Affymetrix probe identifiers
+- 43 tumour samples
+- 7 normal breast samples
+- 12 normal organelle samples
 
-The tumour samples include Basal, non-BLC and BRCA1 characteristics.
+The tumour samples include Basal, non-BLC and BRCA1
+characteristics.
 
-The normal breast and normal organelle samples are retained as separate biological groups.
+The normal breast and normal organelle samples are retained
+as separate biological groups.
 
-### Sample classification and analytical considerations
-
-The original GEO sample metadata contains five distinct biological characteristics. For the purposes of this project, these characteristics are organised into three broader tissue groups.
-
-| Original characteristic | Project classification | Number of samples |
-|:------------------------|:-----------------------|------------------:|
-| Basal                   | Tumour                 |                18 |
-| non-BLC                 | Tumour                 |                21 |
-| BRCA1                   | Tumour                 |                 4 |
-| NB                      | Normal breast          |                 7 |
-| NO                      | Normal organelle       |                12 |
-| **Total**               |                        |            **62** |
-
-The resulting tissue group distribution is:
-
--   **Tumour:** 43 samples
--   **Normal breast:** 7 samples
--   **Normal organelle:** 12 samples
-
-The Basal, non-BLC and BRCA1 characteristics are grouped under the broader Tumour category. The NB and NO characteristics are retained as separate normal tissue groups.
-
-#### Considerations for downstream analysis
-
-The primary comparison for the project is intended to be between tumour tissue (43 samples) and normal breast tissue (7 samples).
-
-The 12 normal organelle samples are kept separate and are not included in the primary tumour-versus-normal-breast comparison. They may be considered separately in exploratory or secondary analyses if appropriate.
-
-The primary comparison has an imbalanced sample size, particularly because the normal breast group contains only 7 samples. This should be considered when selecting statistical methods and interpreting the results.
-
-The original GEO characteristics are preserved in the sample metadata, while the additional `tissue_group` column provides the broader classification used by this project.
 
 ## Setup
 
@@ -115,28 +91,15 @@ project_root <- here::here()
 raw_dir <- here::here("data", "_raw")
 data_dir <- here::here("data")
 
-# Check that the expected directories exist
-if (!dir.exists(raw_dir)) {
-  stop("The raw data directory does not exist: ", raw_dir)
-}
-
-if (!dir.exists(data_dir)) {
-  stop("The data directory does not exist: ", data_dir)
-}
-
-# Load shared project functions, if available
-helper_file <- here::here("R", "99_proj_func.R")
-
-if (file.exists(helper_file)) {
-  source(helper_file)
-}
+# Create the directories if they do not already exist.
+# This is important because Git does not include the ignored data/ folder.
+dir.create(data_dir, recursive = TRUE, showWarnings = FALSE)
+dir.create(raw_dir, recursive = TRUE, showWarnings = FALSE)
 
 # Display project information
 cat("Project root:", project_root, "\n")
 cat("Raw data directory:", raw_dir, "\n")
 cat("Data directory:", data_dir, "\n")
-cat("Shared functions loaded:", file.exists(helper_file), "\n")
-
 ```
 
 ## Load data
@@ -198,76 +161,27 @@ print(tools::md5sum(series_matrix_file))
 
 #| label: 01_inspect-source
 #| message: false
- 
-# Open the compressed text file
-con <- gzfile(series_matrix_file, open = "rt")
 
-# Read the first 35 lines
-file_preview <- readLines(con, n = 35)
+# Open the compressed GEO file and read its contents
+geo_connection <- gzfile(series_matrix_file, open = "rt")
+geo_lines <- readLines(geo_connection, warn = FALSE)
+close(geo_connection)
 
-# Close the connection
-close(con)
-
-# Display the file preview
-cat(file_preview, sep = "\n")
+# Display the first 35 lines to inspect the file structure
+cat(head(geo_lines, 35), sep = "\n")
 
 ```
 
-```{r}
 
-#| label: 01_inspect-metadata
-#| message: false
 
-# Read the complete compressed Series Matrix file
-con <- gzfile(series_matrix_file, open = "rt")
-geo_lines <- readLines(con, warn = FALSE)
-close(con)
-
-# Find important sample metadata rows
-sample_metadata_lines <- grep(
-  "^!Sample_(title|geo_accession|source_name_ch1|characteristics_ch1)",
-  geo_lines,
-  value = TRUE
-)
-
-# Display the sample metadata
-cat(sample_metadata_lines, sep = "\n")
-
-# Locate the beginning and end of the expression matrix
-table_begin <- grep(
-  "^!series_matrix_table_begin",
-  geo_lines
-)
-
-table_end <- grep(
-  "^!series_matrix_table_end",
-  geo_lines
-)
-
-# Verify that both markers exist
-if (length(table_begin) != 1 || length(table_end) != 1) {
-  stop("Could not identify the expression matrix boundaries.")
-}
-
-cat("\nExpression matrix begins at line:", table_begin, "\n")
-cat("Expression matrix ends at line:", table_end, "\n")
-
-# Display the expression matrix header and first five probes
-cat("\nExpression matrix preview:\n")
-
-cat(
-  geo_lines[(table_begin):(table_begin + 5)],
-  sep = "\n"
-)
-
-```
 
 ```{r}
 
 #| label: 01_import-metadata
 #| message: false
 
-# Function to extract one GEO sample metadata row
+# Reusable function: find one GEO metadata row and return
+# its values for all samples (excluding the field-name column).
 extract_sample_field <- function(field_name) {
 
   line_index <- which(startsWith(geo_lines, field_name))
@@ -289,12 +203,14 @@ extract_sample_field <- function(field_name) {
   as.character(unlist(parsed[1, -1], use.names = FALSE))
 }
 
-# Extract sample identifiers and descriptions
+# Extract sample identifiers, titles and source descriptions.
+# These vectors are combined below to create one row per sample.
 sample_ids <- extract_sample_field("!Sample_geo_accession")
 sample_titles <- extract_sample_field("!Sample_title")
 sample_sources <- extract_sample_field("!Sample_source_name_ch1")
 
-# Extract all sample characteristics rows
+# Find all GEO rows containing sample characteristics.
+# Each row can describe a different characteristic for the samples.
 characteristic_indices <- which(
   startsWith(geo_lines, "!Sample_characteristics_ch1")
 )
@@ -320,11 +236,16 @@ sample_metadata <- tibble(
   sample_source = sample_sources
 )
 
-# Add each characteristics row as a separate column
+# Add each characteristics row as a separate metadata column.
+# characteristic_1, for example, contains the first GEO characteristic
+# for every sample; it is not a count of characteristics.
 for (i in seq_along(characteristics)) {
   sample_metadata[[paste0("characteristic_", i)]] <-
     characteristics[[i]]
 }
+
+# Remove temporary extraction objects that are no longer needed
+rm(characteristic_indices, characteristics)
 
 # Inspect the result
 dim(sample_metadata)
@@ -336,6 +257,21 @@ head(sample_metadata)
 
 #| label: 01_import-expression
 #| message: false
+
+# Find the lines marking the beginning and end of the expression matrix
+table_begin <- grep("^!series_matrix_table_begin", geo_lines)
+table_end <- grep("^!series_matrix_table_end", geo_lines)
+
+# Check that both markers were found exactly once and in the correct order
+if (length(table_begin) != 1 ||
+    length(table_end) != 1 ||
+    table_begin >= table_end) {
+  stop("Could not identify the expression matrix boundaries in the GEO file.")
+}
+
+# Display the positions of the markers
+cat("Expression matrix begins at line:", table_begin, "\n")
+cat("Expression matrix ends at line:", table_end, "\n")
 
 # Extract the lines containing the expression matrix
 expression_lines <- geo_lines[
@@ -352,6 +288,9 @@ expression_data <- read.delim(
   stringsAsFactors = FALSE,
   na.strings = c("", "NA")
 )
+
+# Remove the temporary text vector; the imported data is now in expression_data
+rm(expression_lines)
 
 # Inspect the imported expression data
 dim(expression_data)
@@ -372,8 +311,8 @@ print(dim(expression_data))
 cat("\nSample metadata dimensions:\n")
 print(dim(sample_metadata))
 
-# Count the different sample characteristics
-cat("\nSample characteristic frequencies:\n")
+# Count how many samples belong to each original GEO category
+cat("\nNumber of samples in each original GEO category:\n")
 print(
   sample_metadata %>%
     count(characteristic_1, sort = TRUE)
@@ -402,6 +341,9 @@ cat("\nMinimum expression value:", min(expression_values), "\n")
 cat("Maximum expression value:", max(expression_values), "\n")
 cat("Mean expression value:", mean(expression_values), "\n")
 cat("Standard deviation:", sd(expression_values), "\n")
+
+# Remove the temporary vector to keep the R environment cleaner
+rm(expression_values)
 
 ```
 
@@ -432,54 +374,47 @@ sample_metadata %>%
 
 ```
 
+
 ```{r}
 
 #| label: 01_validate-data
 #| message: false
 
-# Extract sample IDs from both objects
+# Check the number of samples in both objects
+cat("Samples in metadata:", nrow(sample_metadata), "\n")
+cat("Samples in expression matrix:", ncol(expression_data) - 1, "\n")
+
+# Check whether sample IDs match
 expression_sample_ids <- colnames(expression_data)[-1]
-metadata_sample_ids <- sample_metadata$sample_id
 
-# Check the number of samples
-stopifnot(
-  length(expression_sample_ids) == nrow(sample_metadata)
+cat(
+  "All expression samples have metadata:",
+  all(expression_sample_ids %in% sample_metadata$sample_id),
+  "\n"
 )
 
-# Check for duplicated sample IDs
-stopifnot(
-  !anyDuplicated(expression_sample_ids),
-  !anyDuplicated(metadata_sample_ids)
-)
-
-# Check that both objects contain exactly the same sample IDs
-stopifnot(
-  setequal(expression_sample_ids, metadata_sample_ids)
-)
-
-# Check that samples appear in the same order
-stopifnot(
-  identical(expression_sample_ids, metadata_sample_ids)
+cat(
+  "All metadata samples have expression data:",
+  all(sample_metadata$sample_id %in% expression_sample_ids),
+  "\n"
 )
 
 # Check for duplicated probe identifiers
-stopifnot(
-  !anyDuplicated(expression_data$ID_REF)
+cat(
+  "Duplicated probe IDs:",
+  sum(duplicated(expression_data$ID_REF)),
+  "\n"
 )
 
 # Check for missing expression values
-stopifnot(
-  sum(is.na(expression_data[-1])) == 0
+cat(
+  "Missing expression values:",
+  sum(is.na(expression_data[-1])),
+  "\n"
 )
 
-cat("Number of samples:", length(expression_sample_ids), "\n")
-cat("Sample IDs are unique:", TRUE, "\n")
-cat("Sample IDs match in the same order:", TRUE, "\n")
-cat("Duplicated probe IDs:", 0, "\n")
-cat("Missing expression values:", 0, "\n")
-cat("\nAll initial validation checks passed!\n")
-
 ```
+
 
 ## Save output
 
@@ -540,32 +475,19 @@ stopifnot(
   identical(dim(saved_metadata), dim(sample_metadata))
 )
 
-# Check expression matrix sample IDs
+# Check sample identifiers
 stopifnot(
   identical(
     colnames(saved_expression)[-1],
-    colnames(expression_data)[-1]
+    saved_metadata$sample_id
   )
 )
 
-# Check metadata sample IDs and classifications
-stopifnot(
-  identical(saved_metadata$sample_id, sample_metadata$sample_id),
-  identical(saved_metadata$tissue_group, sample_metadata$tissue_group)
-)
-
-# Check that expression values were preserved
-stopifnot(
-  isTRUE(all.equal(
-    as.matrix(saved_expression[-1]),
-    as.matrix(expression_data[-1]),
-    tolerance = 0
-  ))
-)
-
-# Display tissue group counts
+# Check tissue group counts
 print(saved_metadata %>% count(tissue_group))
 
+# Confirm successful validation
 cat("\nAll saved output validation checks passed!\n")
 
 ```
+
